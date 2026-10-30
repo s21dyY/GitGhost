@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a1017;
+  --foreground: #e7e0ce;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-fog: #5dafa7;
+  --color-bone: #e7e0ce;
+  --color-violet: #a88cdc;
+  --color-rust: #ae6559;
+  --color-stone: #131c27;
+  --color-stone-edge: #25323f;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Pixel-style headings: system fonts only, blocky shadow. */
+.pixel {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.fog {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(93, 175, 167, 0.18), transparent 55%),
+    radial-gradient(ellipse at 85% 10%, rgba(168, 140, 220, 0.14), transparent 50%);
+}
+
+.tombstone {
+  clip-path: polygon(
+    0 12%, 4% 12%, 4% 6%, 10% 6%, 10% 2%, 20% 2%, 20% 0,
+    80% 0, 80% 2%, 90% 2%, 90% 6%, 96% 6%, 96% 12%, 100% 12%,
+    100% 100%, 0 100%
+  );
+}
+
+.tomb-wrap:hover .tombstone,
+.tomb-wrap:focus-within .tombstone {
+  background: #1b2736;
+}
+
+.tomb-link:focus-visible {
+  outline: 3px solid #e7e0ce;
+  outline-offset: 4px;
+}
+
+@keyframes drift {
+  from { transform: translateX(-4%); }
+  to { transform: translateX(4%); }
+}
+
+.drift {
+  animation: drift 12s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drift { animation: none; }
+  * { transition: none !important; }
+}
