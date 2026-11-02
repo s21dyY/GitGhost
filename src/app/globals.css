@@ -1,70 +1,745 @@
 @import "tailwindcss";
 
+/*
+ * GitGhost visual system ("haunted RPG").
+ *
+ * Pixel grid: one UI pixel = --px = 4 CSS px. Panel borders, bevels and notched corners are built
+ * from whole multiples of --px. Ghost sprites are 24 x 32 art pixels drawn at an INTEGER scale
+ * (--sprite-px = 9 or 12 CSS px per art pixel); the graveyard backdrop is 192 x 108 art pixels at
+ * an integer scale (--scene-px = 5, 7, 8 or 10). SVG art uses crispEdges, so no art pixel is ever
+ * blurred or drawn at a different size from its neighbors.
+ *
+ * Type: Press Start 2P for titles and nameplates (short strings only), Silkscreen for small
+ * labels and buttons, Atkinson Hyperlegible for everything people actually read.
+ */
 :root {
-  --background: #0a1017;
-  --foreground: #e7e0ce;
+  --px: 4px;
+  --night: #0c1020;
+  --night-2: #10162b;
+  --slate: #18202b;
+  --slate-2: #222c3d;
+  --edge: #34425c;
+  --purple: #70618e; /* decoration and borders */
+  --purple-text: #bcaedf; /* readable purple on dark */
+  --teal: #6bb8b1;
+  --bone: #e9e2d6;
+  --bone-dim: #cfc8ba;
+  --gold: #e4c18b;
+  --crimson: #9d596b; /* decoration and borders */
+  --crimson-text: #efa9ba; /* readable crimson on dark */
+  --background: var(--night);
+  --foreground: var(--bone);
+  --scene-px: 5px;
+  --sprite-px: 9px;
+}
+@media (min-width: 768px) {
+  :root { --sprite-px: 12px; }
+}
+@media (min-width: 1100px) {
+  :root { --scene-px: 7px; }
+}
+@media (min-width: 1400px) {
+  :root { --scene-px: 8px; }
+}
+@media (min-width: 1700px) {
+  :root { --scene-px: 10px; }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-fog: #5dafa7;
-  --color-bone: #e7e0ce;
-  --color-violet: #a88cdc;
-  --color-rust: #ae6559;
-  --color-stone: #131c27;
-  --color-stone-edge: #25323f;
+  --color-fog: var(--teal);
+  --color-bone: var(--bone);
+  --color-violet: var(--purple-text);
+  --color-rust: var(--crimson);
+  --color-stone: var(--slate);
+  --color-stone-edge: var(--edge);
+  --color-gold: var(--gold);
+  --color-night: var(--night);
+  --color-crimson: var(--crimson-text);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
+html { scroll-padding-top: 1rem; }
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
 }
+::selection { background: var(--gold); color: var(--night); }
 
-/* Pixel-style headings: system fonts only, blocky shadow. */
-.pixel {
-  font-weight: 700;
-  letter-spacing: 0.08em;
+/* Component styles live in a layer so Tailwind utilities (mx-auto, p-4, ...) can override them. */
+@layer components {
+/* ---------- type ---------- */
+.font-pixel, .pixel {
+  font-family: var(--font-pixel), ui-monospace, monospace;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  text-shadow: 2px 2px 0 #000;
+}
+.pixel { text-transform: uppercase; }
+.font-label {
+  font-family: var(--font-label), ui-monospace, monospace;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  text-shadow: 3px 3px 0 #000;
 }
 
-.fog {
+/* ---------- skip link ---------- */
+.skip-link {
+  position: absolute; left: 0.5rem; top: -4rem; z-index: 50;
+  background: var(--gold); color: var(--night); padding: 0.5rem 0.75rem;
+  font-family: var(--font-label), monospace; text-transform: uppercase;
+}
+.skip-link:focus { top: 0.5rem; outline: 4px solid var(--bone); outline-offset: 2px; }
+
+/* ---------- graveyard backdrop ---------- */
+.scene { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--night); }
+.scene svg {
+  position: absolute; bottom: 0; left: 50%;
+  width: calc(192 * var(--scene-px)); height: calc(108 * var(--scene-px));
+  transform: translateX(-50%); opacity: 0.92;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.scene-vignette {
+  position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 20% 0%, rgba(93, 175, 167, 0.18), transparent 55%),
-    radial-gradient(ellipse at 85% 10%, rgba(168, 140, 220, 0.14), transparent 50%);
+    linear-gradient(to bottom, rgba(8, 11, 24, 0.55), transparent 30%),
+    radial-gradient(ellipse at 50% 65%, transparent 35%, rgba(5, 7, 15, 0.7) 100%);
+}
+@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+@keyframes fogdrift { from { transform: translateX(0); } to { transform: translateX(-36px); } }
+.scene-star-a { animation: twinkle 3s steps(2) infinite; }
+.scene-star-b { animation: twinkle 4s steps(2) 1s infinite; }
+.scene-star-c { animation: twinkle 5s steps(2) 2s infinite; }
+.scene-fog { animation: fogdrift 45s linear infinite alternate; }
+.scene-fog-a { opacity: 0.14; }
+.scene-fog-b { opacity: 0.2; animation-duration: 60s; }
+
+/* ---------- RPG panels ---------- */
+/* Border, bevel and notched corners from box-shadows: crisp at any zoom, no images. */
+.rpg-panel {
+  --bc: var(--purple);
+  --hi: rgba(233, 226, 214, 0.1);
+  --lo: rgba(0, 0, 0, 0.35);
+  position: relative;
+  margin: var(--px);
+  background: rgba(16, 22, 43, 0.93);
+  color: var(--bone);
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--bc),
+    0 var(--px) 0 0 var(--bc),
+    calc(-1 * var(--px)) 0 0 0 var(--bc),
+    var(--px) 0 0 0 var(--bc),
+    inset var(--px) var(--px) 0 0 var(--hi),
+    inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 0 var(--lo),
+    0 calc(2 * var(--px)) 0 0 rgba(0, 0, 0, 0.45);
+}
+.rpg-gold { --bc: var(--gold); }
+.rpg-teal { --bc: var(--teal); }
+.rpg-crimson { --bc: var(--crimson); }
+.rpg-bone { --bc: var(--bone-dim); }
+.rpg-dim { --bc: var(--edge); }
+.rpg-title {
+  display: inline-block;
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 #000;
 }
 
-.tombstone {
-  clip-path: polygon(
-    0 12%, 4% 12%, 4% 6%, 10% 6%, 10% 2%, 20% 2%, 20% 0,
-    80% 0, 80% 2%, 90% 2%, 90% 6%, 96% 6%, 96% 12%, 100% 12%,
-    100% 100%, 0 100%
-  );
+.rpg-btn {
+  --bc: var(--purple);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 44px; min-width: 44px;
+  margin: var(--px);
+  padding: 0.5rem 1rem;
+  background: var(--slate-2);
+  color: var(--bone);
+  font-family: var(--font-label), monospace;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--bc),
+    0 var(--px) 0 0 var(--bc),
+    calc(-1 * var(--px)) 0 0 0 var(--bc),
+    var(--px) 0 0 0 var(--bc),
+    inset 0 calc(-1 * var(--px)) 0 0 rgba(0, 0, 0, 0.4),
+    inset 0 var(--px) 0 0 rgba(233, 226, 214, 0.1);
 }
+.rpg-btn:hover:not(:disabled) { background: #2c3850; color: #fff; --bc: var(--gold); }
+.rpg-btn:active:not(:disabled) { transform: translateY(2px); }
+.rpg-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.rpg-btn[aria-pressed="true"] { background: #3a3550; --bc: var(--gold); color: var(--gold); }
+.rpg-btn-primary { --bc: var(--teal); background: #1d3a3f; color: #d8f3ef; }
+.rpg-btn-primary:hover:not(:disabled) { background: #26525a; --bc: var(--bone); }
 
-.tomb-wrap:hover .tombstone,
-.tomb-wrap:focus-within .tombstone {
-  background: #1b2736;
-}
-
-.tomb-link:focus-visible {
-  outline: 3px solid #e7e0ce;
+:where(a, button, input, textarea, summary, [tabindex="0"]):focus-visible {
+  outline: 4px solid var(--bone);
   outline-offset: 4px;
 }
 
-@keyframes drift {
-  from { transform: translateX(-4%); }
-  to { transform: translateX(4%); }
+.rpg-tag {
+  display: inline-block;
+  padding: 0 0.4rem;
+  margin-right: 0.5rem;
+  border: 2px solid currentColor;
+  font-family: var(--font-label), monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: 0.12em;
+  font-style: normal;
+}
+.tag-record { color: var(--gold); }
+.tag-reading { color: var(--purple-text); }
+.tag-missing { color: var(--crimson-text); }
+.tag-speech { color: var(--teal); }
+
+.rpg-input {
+  width: 100%;
+  background: #080b17;
+  color: var(--bone);
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  box-shadow: inset 0 0 0 var(--px) var(--edge);
+  font-size: 1rem;
+}
+.rpg-input::placeholder { color: #a9a396; }
+
+/* ---------- ghost encounter stage ---------- */
+.stage { position: relative; overflow: hidden; padding: 1.25rem 0 0; }
+.stage-human {
+  background:
+    radial-gradient(ellipse at 50% 72%, rgba(228, 193, 139, 0.34), transparent 66%),
+    linear-gradient(#1c2038, #141a31);
+}
+.stage-horror {
+  background:
+    radial-gradient(ellipse at 50% 72%, rgba(107, 184, 177, 0.24), transparent 62%),
+    radial-gradient(ellipse at 50% 108%, rgba(157, 89, 107, 0.3), transparent 55%),
+    linear-gradient(#0d1124, #080b18);
+}
+.stage-floor {
+  height: calc(3 * var(--px));
+  margin-top: calc(-2 * var(--px));
+  background: repeating-linear-gradient(90deg, #2b3555 0 var(--px), #1d2540 var(--px) calc(2 * var(--px)));
+  box-shadow: 0 calc(-1 * var(--px)) 0 0 rgba(233, 226, 214, 0.18);
+}
+.sprite { display: block; margin: 0 auto; width: calc(24 * var(--sprite-px)); height: calc(32 * var(--sprite-px)); }
+.ghost-human { filter: saturate(1.05) brightness(1.1) sepia(0.12); }
+.ghost-horror {
+  filter: saturate(0.8) contrast(1.12) brightness(1.1)
+    drop-shadow(var(--px) 0 0 rgba(157, 89, 107, 0.6))
+    drop-shadow(calc(-1 * var(--px)) 0 0 rgba(107, 184, 177, 0.4));
+}
+@keyframes glitch {
+  0%, 90%, 100% { transform: none; }
+  91% { transform: translateX(var(--px)); }
+  93% { transform: translateX(calc(-2 * var(--px))); }
+  95% { transform: translate(var(--px), calc(-1 * var(--px))); }
+  97% { transform: translateX(calc(2 * var(--px))); }
+}
+.ghost-glitch { animation: glitch 7s steps(1) infinite; }
+@keyframes morph {
+  0% { filter: brightness(3) contrast(0.4); opacity: 0.3; }
+  25% { filter: brightness(0.3); opacity: 1; transform: translateX(var(--px)); }
+  50% { filter: brightness(2.2) hue-rotate(40deg); transform: translateX(calc(-1 * var(--px))); }
+  75% { filter: brightness(0.6); transform: none; }
+  100% { filter: none; opacity: 1; }
+}
+.ghost-morph { animation: morph 0.6s steps(1) 1; }
+@keyframes mote {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(calc(-14 * var(--px))); opacity: 0; }
+}
+.mote {
+  position: absolute; width: var(--px); height: var(--px); background: var(--teal); opacity: 0.7;
+  animation: mote 6s steps(12) infinite;
+}
+.stage-human .mote { background: var(--gold); }
+
+/* ---------- dialogue ---------- */
+.reveal-rest { opacity: 0; }
+@keyframes dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+.dots span { display: inline-block; animation: dot 1s steps(2) infinite; }
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+.caret { display: inline-block; width: 0.6em; height: 1em; margin-left: 2px; background: var(--gold); vertical-align: -0.12em; animation: dot 1s steps(2) infinite; }
+
+/* ---------- graveyard markers ---------- */
+.marker { transition: transform 0.12s steps(2); }
+.marker-wrap:hover .marker, .marker-wrap:focus-within .marker { transform: translateY(calc(-1 * var(--px))); }
+.marker-wrap:hover .rpg-panel, .marker-wrap:focus-within .rpg-panel { --bc: var(--gold); }
+
+/* head-and-shoulders portrait in the dialogue header: 12 x 11 art pixels at an integer scale */
+.portrait { display: block; width: calc(12 * var(--portrait-px, 6px)); height: calc(11 * var(--portrait-px, 6px)); }
+@media (min-width: 640px) { :root { --portrait-px: 8px; } }
 }
 
-.drift {
-  animation: drift 12s ease-in-out infinite alternate;
+/* ---------- required: ghost animation + static fallbacks (do not reorder) ---------- */
+@keyframes ghost-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
+@keyframes ghost-a { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes ghost-b { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@keyframes ghost-dot { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+.ghost-bob { animation: ghost-bob 4s ease-in-out infinite; }
+.ghost-frame-a { animation: ghost-a 0.8s steps(1) infinite; }
+.ghost-frame-b { opacity: 0; animation: ghost-b 0.8s steps(1) infinite; }
+.ghost-dot { animation: ghost-dot 1.2s steps(2) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .drift { animation: none; }
-  * { transition: none !important; }
+  .ghost-bob, .ghost-frame-a, .ghost-frame-b, .ghost-dot { animation: none; }
+  .ghost-frame-a, .ghost-dot { opacity: 1; }
+  .ghost-frame-b { opacity: 0; }
 }
+
+/* ---------- reduced motion for everything else: static art, instant changes ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .scene-star, .scene-fog, .ghost-glitch, .ghost-morph, .mote, .dots span, .caret { animation: none !important; }
+  .mote { opacity: 0.5; }
+  .marker, .rpg-btn { transition: none !important; }
+  .marker-wrap:hover .marker, .marker-wrap:focus-within .marker, .rpg-btn:active:not(:disabled) { transform: none; }
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Milestone 2B.3: the encounter scene ----------
+ * One illustrated location in a 320 x 240 art-pixel box. Ghost and scenery share the same art pixel
+ * (--a, an integer number of CSS px), so no two pixel sizes ever mix. The ground line sits just above
+ * the dialogue dock (--dlg) and the box is centred on the ghost; extra width/height is simply cropped.
+ */
+:root { --a: 4px; --dlg: 270px; --world-shift: 0px; }
+@media (min-width: 1100px) and (min-height: 1000px) { :root { --a: 5px; } }
+@media (max-height: 640px) { :root { --a: 3px; } }
+@media (max-width: 639px) { :root { --dlg: 330px; } }
+@layer components {
+  .encounter { position: fixed; inset: 0; overflow: hidden; background: #05070f; isolation: isolate; }
+  .encounter-world {
+    position: absolute; width: calc(320 * var(--a)); height: calc(240 * var(--a));
+    left: 50%; margin-left: calc(-160 * var(--a)); bottom: calc(var(--dlg) - 48 * var(--a));
+  }
+  .encounter-world-front { pointer-events: none; }
+  .encounter-world-front .enc-ghost { pointer-events: auto; }
+  .enc-layer { position: absolute; inset: 0; background-size: 100% 100%; image-rendering: pixelated; }
+  .enc-sky { background-image: url(/scene/sky.png); }
+  .enc-far { background-image: url(/scene/far.png); }
+  .enc-mid { background-image: url(/scene/mid.png); }
+  .enc-near { background-image: url(/scene/near.png); }
+  .enc-fog {
+    top: calc(150 * var(--a)); bottom: auto; height: calc(72 * var(--a));
+    background-image: url(/scene/fog.png); background-size: calc(320 * var(--a)) 100%; background-repeat: repeat-x;
+    animation: enc-fog 90s linear infinite;
+  }
+  .enc-fog-back { opacity: 0.45; }
+  .enc-fog-front { opacity: 0.3; top: calc(172 * var(--a)); animation-duration: 60s; animation-direction: reverse; }
+  @keyframes enc-fog { to { background-position-x: calc(320 * var(--a)); } }
+  /* the ghost stands on the ground line (y = 192); its feet are on art row 78 of 80 */
+  .enc-ghost { position: absolute; left: calc(128 * var(--a)); top: calc(114 * var(--a)); width: calc(64 * var(--a)); height: calc(80 * var(--a)); }
+  .enc-ghost svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .enc-flame { position: absolute; left: calc(102 * var(--a)); top: calc(131 * var(--a)); width: calc(9 * var(--a)); height: calc(14 * var(--a)); image-rendering: pixelated; animation: enc-flicker 1.4s steps(1) infinite; }
+  @keyframes enc-flicker { 0%, 100% { opacity: 1; } 30% { opacity: 0.85; } 60% { opacity: 0.95; } 80% { opacity: 0.8; } }
+  /* banded (hard-stop) light pools: no smooth glows, so they read as pixel art */
+  .enc-light { position: absolute; border-radius: 50%; }
+  .enc-moonlight {
+    width: calc(150 * var(--a)); height: calc(150 * var(--a)); left: calc((214 - 75) * var(--a)); top: calc((56 - 75) * var(--a));
+    background: radial-gradient(circle, rgba(200, 215, 245, 0.10) 0 calc(24 * var(--a)), rgba(170, 190, 235, 0.06) calc(24 * var(--a)) calc(48 * var(--a)), rgba(150, 170, 220, 0.03) calc(48 * var(--a)) calc(75 * var(--a)), transparent calc(75 * var(--a)));
+  }
+  .enc-lamplight {
+    width: calc(90 * var(--a)); height: calc(90 * var(--a)); left: calc((106 - 45) * var(--a)); top: calc((138 - 40) * var(--a));
+    background: radial-gradient(circle, rgba(255, 200, 120, 0.22) 0 calc(8 * var(--a)), rgba(255, 180, 90, 0.13) calc(8 * var(--a)) calc(18 * var(--a)), rgba(255, 160, 80, 0.07) calc(18 * var(--a)) calc(30 * var(--a)), rgba(255, 150, 70, 0.03) calc(30 * var(--a)) calc(45 * var(--a)), transparent calc(45 * var(--a)));
+  }
+  .encounter[data-form="horror"] .enc-lamplight {
+    background: radial-gradient(circle, rgba(120, 230, 220, 0.2) 0 calc(8 * var(--a)), rgba(100, 210, 200, 0.12) calc(8 * var(--a)) calc(18 * var(--a)), rgba(90, 190, 190, 0.06) calc(18 * var(--a)) calc(30 * var(--a)), rgba(80, 180, 180, 0.03) calc(30 * var(--a)) calc(45 * var(--a)), transparent calc(45 * var(--a)));
+  }
+  .encounter[data-form="horror"] .enc-moonlight {
+    background: radial-gradient(circle, rgba(230, 150, 170, 0.12) 0 calc(24 * var(--a)), rgba(200, 120, 150, 0.07) calc(24 * var(--a)) calc(48 * var(--a)), rgba(170, 100, 130, 0.035) calc(48 * var(--a)) calc(75 * var(--a)), transparent calc(75 * var(--a)));
+  }
+  /* the horror hour: cold vignette over everything behind the dialogue */
+  .encounter::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 55%, transparent 0 40%, rgba(5, 10, 24, 0.55) 100%);
+  }
+  .encounter[data-form="horror"]::after {
+    background: radial-gradient(ellipse at 50% 55%, rgba(20, 60, 70, 0.1) 0 30%, rgba(40, 8, 24, 0.62) 100%);
+  }
+  .encounter[data-form="horror"] .enc-fog-back, .encounter[data-form="horror"] .enc-fog-front { opacity: 0.75; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enc-fog, .enc-flame { animation: none !important; }
+}
+
+/* ---------- encounter dialogue dock ---------- */
+@layer components {
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; height: var(--dlg); z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding: 0 calc(var(--px) * 3) calc(var(--px) * 3); pointer-events: none; }
+  .dock > * { pointer-events: auto; }
+  .dlg { position: relative; width: min(100%, 60rem); display: flex; flex-direction: column; max-height: 100%; }
+  .dlg-tab {
+    align-self: flex-start; margin-left: calc(var(--px) * 3); margin-bottom: calc(-1 * var(--px));
+    position: relative; z-index: 1; padding: calc(var(--px) * 1.5) calc(var(--px) * 3);
+    background: #0b0f1f; color: var(--gold); border: var(--px) solid var(--edge); border-bottom: 0;
+    font-family: var(--font-pixel), monospace; font-size: 0.75rem; line-height: 1.4; max-width: 100%; overflow-wrap: anywhere;
+  }
+  .dlg-box { display: flex; gap: calc(var(--px) * 3); min-height: 0; background: rgba(8, 11, 24, 0.94); border: var(--px) solid var(--edge); box-shadow: inset 0 0 0 var(--px) #0b0f1f, inset 0 0 0 calc(var(--px) * 1.5) rgba(228, 193, 139, 0.35); padding: calc(var(--px) * 4); }
+  .dlg-portrait { flex: none; align-self: flex-start; width: calc(28 * var(--a)); height: calc(28 * var(--a)); background: #12182c; border: var(--px) solid var(--edge); overflow: hidden; }
+  .dlg-portrait svg { display: block; width: 100%; height: 100%; }
+  @media (max-width: 639px) { .dlg-portrait { width: calc(20 * var(--a)); height: calc(20 * var(--a)); } .dlg-portrait svg { width: calc(28 * var(--a)); height: calc(28 * var(--a)); margin: calc(-4 * var(--a)) 0 0 calc(-4 * var(--a)); max-width: none; } }
+  .dlg-text { min-width: 0; flex: 1; }
+}
+@layer components {
+  .ghost-blink { opacity: 0; animation: ghost-blink 6s steps(1) infinite; }
+  .enc-ghost .ghost-blink { animation-delay: 1.5s; }
+  .encounter-world { -webkit-mask-image: linear-gradient(90deg, transparent, #000 calc(28 * var(--a)), #000 calc(292 * var(--a)), transparent); mask-image: linear-gradient(90deg, transparent, #000 calc(28 * var(--a)), #000 calc(292 * var(--a)), transparent); }
+}
+@keyframes ghost-blink { 0%, 94% { opacity: 0; } 95%, 98% { opacity: 1; } 99%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ghost-blink { animation: none; opacity: 0; } }
+
+/* ---------- encounter: HUD, dialogue internals, drawers ---------- */
+@layer components {
+  .enc-ghost > div { width: 100%; height: 100%; }
+  .hud { position: fixed; top: 0; left: 0; right: 0; z-index: 30; padding: calc(var(--px) * 2) calc(var(--px) * 3); pointer-events: none; }
+  .hud > * { pointer-events: auto; }
+  .hud-row { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--px) * 2); }
+  .hud-spacer { flex: 1 1 0; }
+  .hud-sub { margin-top: calc(var(--px) * 2); }
+  .hud .rpg-btn { background-color: rgba(8, 11, 24, 0.82); }
+  .dlg-tabs { display: flex; align-items: flex-end; gap: calc(var(--px) * 2); margin-left: calc(var(--px) * 3); margin-bottom: calc(-1 * var(--px)); position: relative; z-index: 1; flex-wrap: wrap; }
+  .dlg-tabs .dlg-tab { margin: 0; }
+  .dlg-tab { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--px) * 2); }
+  .dlg-tab-quiet { color: var(--bone-dim); font-family: var(--font-label), monospace; font-size: 0.75rem; text-transform: uppercase; padding-block: var(--px); }
+  .dlg-status { font-family: var(--font-label), monospace; font-size: 0.75rem; text-transform: uppercase; }
+  .dlg { max-height: min(100%, 22rem); }
+  .dlg-box { flex: 1 1 auto; overflow: hidden; }
+  .dlg-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: calc(var(--px) * 2); min-height: 0; }
+  .dlg-log { flex: 1 1 auto; min-height: 5rem; overflow-y: auto; overscroll-behavior: contain; padding-right: calc(var(--px) * 2); }
+  .dlg-line { font-size: 1.05rem; line-height: 1.55; color: var(--bone); }
+  .dlg-you { margin-left: auto; max-width: 92%; border-right: var(--px) solid var(--teal); background: rgba(18, 48, 58, 0.7); padding: var(--px) calc(var(--px) * 3); margin-bottom: calc(var(--px) * 2); }
+  .dlg-choices { margin-top: calc(var(--px) * 2); display: grid; gap: var(--px); }
+  @media (min-width: 640px) { .dlg-choices { grid-template-columns: 1fr 1fr; } }
+  .dlg-form { flex: none; }
+  .dlg-hint { margin-top: var(--px); font-size: 0.8rem; line-height: 1.3; color: var(--bone-dim); }
+  .ghost-fig { display: block; width: 100%; height: 100%; }
+  .portrait-art { display: block; width: 100%; height: 100%; }
+  .drawer { margin: 0 0 0 auto; width: min(100vw, 34rem); max-width: 100vw; height: 100dvh; max-height: 100dvh; padding: 0; border: 0; background: transparent; color: var(--foreground); }
+  .drawer::backdrop { background: rgba(3, 5, 12, 0.7); }
+  .drawer-inner { height: 100%; display: flex; flex-direction: column; background: #0b0f1f; border-left: calc(var(--px) * 1) solid var(--edge); box-shadow: inset var(--px) 0 0 0 rgba(228, 193, 139, 0.3); }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--px) * 3); padding: calc(var(--px) * 3) calc(var(--px) * 4); border-bottom: var(--px) solid var(--edge); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: calc(var(--px) * 4); }
+}
+@layer components {
+  .dock { height: calc(var(--dlg) + 3rem); }
+  .dlg-choices { margin-top: var(--px); }
+}
+@media (max-width: 639px) {
+  :root { --dlg: 300px; }
+  .dock { height: calc(var(--dlg) + 8rem); padding-inline: calc(var(--px) * 2); }
+  .dlg { max-height: min(100%, 24rem); }
+  .dlg-box { padding: calc(var(--px) * 3); gap: calc(var(--px) * 2); }
+  .dlg-hint { font-size: 0.75rem; }
+  .dlg-log { min-height: 6rem; }
+}
+@layer components {
+  .landing-hero { min-height: 62dvh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+  .landing-hero h1 { text-shadow: 4px 4px 0 #000, 0 0 28px rgba(107, 184, 177, 0.5); }
+}
+@media (min-width: 1024px) {
+  .landing-hero { align-items: flex-start; }
+  .landing-hero > * { max-width: 34rem; }
+  .landing-hero .rpg-panel { margin-left: 0 !important; margin-right: 0 !important; }
+  .landing-hero p { margin-left: 0 !important; }
+}
+/* ---------- 2C.1 phone dialogue stabilization ---------- */
+@media (max-width: 639px) {
+  /* keyboard hints are for physical keyboards: kept for assistive tech, off the small screen */
+  .dlg-hint-keys, .dlg-choose { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .dlg-portrait { width: calc(22 * var(--a)); height: calc(22 * var(--a)); }
+  .dlg-portrait svg { width: calc(28 * var(--a)); height: calc(28 * var(--a)); margin: calc(-2 * var(--a)) 0 0 calc(-3 * var(--a)); max-width: none; }
+  .dlg-choices { grid-template-columns: 1fr 1fr; }
+  .dlg-choices .rpg-btn { font-size: 0.7rem; line-height: 1.25; padding-inline: calc(var(--px) * 2); }
+  .dlg-log { min-height: 7rem; }
+}
+@media (max-width: 639px) {
+  /* phones: two starters in one row; all four remain on larger screens, and any question can be typed */
+  .dlg-choices li:nth-child(n + 3) { display: none; }
+}
+
+/* ---------- Horror atmosphere pass ----------
+ * Last in the file on purpose: it re-tones the existing palette, panels and encounter without
+ * touching the required animation blocks above. Everything animated here is switched off by
+ * prefers-reduced-motion at the end of this section. Text contrast stays at or above 4.5:1.
+ */
+:root {
+  --night: #070a14;
+  --night-2: #0b101e;
+  --slate: #12171f;
+  --slate-2: #171d28;
+  --edge: #2b3446;
+  --purple: #4d4a5e;
+  --purple-text: #b5aecb;
+  --teal: #639c99;
+  --bone: #d8d2c3;
+  --bone-dim: #bbb5a6;
+  --gold: #c7a672;
+  --crimson: #75343f;
+  --crimson-text: #e49aa6;
+}
+
+/* relic panels: worn slabs, dim by default, a hairline crack and age stains instead of a bevel */
+.rpg-panel {
+  --hi: rgba(216, 210, 195, 0.04);
+  --lo: rgba(0, 0, 0, 0.5);
+  background-color: rgba(9, 13, 24, 0.95);
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(80, 100, 105, 0.1), transparent 45%),
+    radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, 0.5), transparent 55%),
+    linear-gradient(115deg, transparent 0 62%, rgba(0, 0, 0, 0.35) 62.2%, transparent 62.6%);
+}
+.rpg-title { text-shadow: 2px 2px 0 #000, 0 0 10px rgba(0, 0, 0, 0.8); letter-spacing: 0.04em; }
+.rpg-btn {
+  background-color: #0f141e;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.35));
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--bc),
+    0 var(--px) 0 0 var(--bc),
+    calc(-1 * var(--px)) 0 0 0 var(--bc),
+    var(--px) 0 0 0 var(--bc),
+    inset 0 calc(-1 * var(--px)) 0 0 rgba(0, 0, 0, 0.55);
+}
+.rpg-btn:hover:not(:disabled) { background-color: #1a222f; --bc: var(--gold); }
+.rpg-btn[aria-pressed="true"] { background-color: #241f2c; }
+.rpg-btn-primary { background-color: #13292c; color: #cfe6e2; }
+.rpg-btn-primary:hover:not(:disabled) { background-color: #1b3a3e; }
+.rpg-tag { border-width: 1px; letter-spacing: 0.04em; }
+.rpg-input { background: #05070e; }
+
+/* encounter: heavier dusk, thicker mist, pressure at the edges */
+.encounter { background: #03050a; }
+.enc-fog-back { opacity: 0.6; }
+.enc-fog-front { opacity: 0.4; }
+.encounter[data-form="horror"] .enc-fog-back { opacity: 0.85; }
+.encounter[data-form="horror"] .enc-fog-front { opacity: 0.65; }
+.encounter::after { background: radial-gradient(ellipse at 50% 52%, transparent 0 26%, rgba(2, 4, 10, 0.78) 100%); }
+.encounter[data-form="horror"]::after {
+  background: radial-gradient(ellipse at 50% 52%, rgba(16, 44, 50, 0.08) 0 20%, rgba(22, 4, 10, 0.82) 100%);
+}
+.encounter[data-form="horror"] .enc-moonlight {
+  background: radial-gradient(circle, rgba(170, 190, 200, 0.1) 0 calc(24 * var(--a)), rgba(130, 150, 165, 0.05) calc(24 * var(--a)) calc(48 * var(--a)), transparent calc(75 * var(--a)));
+}
+.encounter[data-form="horror"] .enc-lamplight {
+  background: radial-gradient(circle, rgba(110, 190, 185, 0.14) 0 calc(8 * var(--a)), rgba(90, 160, 160, 0.08) calc(8 * var(--a)) calc(18 * var(--a)), rgba(80, 140, 145, 0.035) calc(18 * var(--a)) calc(30 * var(--a)), transparent calc(45 * var(--a)));
+}
+.enc-lamplight { opacity: 0.8; }
+
+/* drifting ash: a few single-pixel specks, two speeds, falling slowly */
+.enc-ash, .enc-flicker { position: absolute; inset: 0; pointer-events: none; }
+.enc-ash::before, .enc-ash::after {
+  content: ""; position: absolute; left: 0; top: calc(-20 * var(--a)); width: calc(1 * var(--a)); height: calc(1 * var(--a));
+  background: transparent; opacity: 0.55;
+  box-shadow:
+    calc(30 * var(--a)) calc(20 * var(--a)) #8f9aa0, calc(74 * var(--a)) calc(88 * var(--a)) #6f7a82, calc(120 * var(--a)) calc(40 * var(--a)) #a0a8a8,
+    calc(166 * var(--a)) calc(120 * var(--a)) #7d868c, calc(210 * var(--a)) calc(64 * var(--a)) #98a0a2, calc(254 * var(--a)) calc(150 * var(--a)) #6f7a82,
+    calc(290 * var(--a)) calc(30 * var(--a)) #8f9aa0, calc(54 * var(--a)) calc(170 * var(--a)) #7d868c, calc(188 * var(--a)) calc(200 * var(--a)) #98a0a2,
+    calc(240 * var(--a)) calc(8 * var(--a)) #a0a8a8, calc(98 * var(--a)) calc(140 * var(--a)) #6f7a82;
+  animation: enc-ash 38s linear infinite;
+}
+.enc-ash::after { left: calc(17 * var(--a)); opacity: 0.35; animation-duration: 56s; animation-delay: -20s; transform: scale(1.4); }
+@keyframes enc-ash { from { transform: translate(0, 0); } to { transform: translate(calc(-14 * var(--a)), calc(60 * var(--a))); } }
+
+/* rare cold flicker, as if something passed in front of the moon. Well under 3 Hz, never fast. */
+.enc-flicker { background: rgba(120, 150, 170, 0.06); opacity: 0; animation: enc-flicker-rare 17s steps(1) infinite; }
+.encounter[data-form="horror"] .enc-flicker { animation-duration: 11s; }
+@keyframes enc-flicker-rare {
+  0%, 91%, 94%, 100% { opacity: 0; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+}
+
+/* dialogue: a worn stone slab with chamfered corners and a dim edge */
+.dlg-box {
+  background-color: rgba(5, 8, 16, 0.95);
+  background-image: radial-gradient(ellipse at 0% 0%, rgba(70, 90, 100, 0.12), transparent 40%), linear-gradient(0deg, rgba(0, 0, 0, 0.35), transparent 40%);
+  border-color: #242c3b;
+  box-shadow: inset 0 0 0 var(--px) #070a14, inset 0 0 0 calc(var(--px) * 1.5) rgba(150, 140, 120, 0.16);
+  clip-path: polygon(0 var(--px), var(--px) var(--px), var(--px) 0, calc(100% - 3 * var(--px)) 0, calc(100% - 3 * var(--px)) var(--px), calc(100% - 2 * var(--px)) var(--px), calc(100% - 2 * var(--px)) 2px, 100% 2px, 100% calc(100% - 2 * var(--px)), calc(100% - 2 * var(--px)) calc(100% - 2 * var(--px)), calc(100% - 2 * var(--px)) 100%, var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px)));
+}
+.dlg-tab { background: #05080f; color: var(--gold); border-color: #242c3b; }
+.dlg-tab-quiet { color: var(--bone-dim); opacity: 0.9; }
+.dlg-portrait { background: #070a14; border-color: #242c3b; filter: saturate(0.9); }
+.dlg-you { background: rgba(10, 26, 30, 0.7); border-right-color: #3f6867; }
+.dlg-hint { color: var(--bone-dim); }
+.dlg-line { color: var(--bone); }
+.drawer-inner { background: #060912; box-shadow: inset var(--px) 0 0 0 rgba(150, 140, 120, 0.14); }
+.hud .rpg-btn { background-color: rgba(5, 8, 14, 0.88); }
+
+/* the ghost's own lines read as a presence in the room: pale, set apart, with a dim crimson mark */
+.dlg-ghost { border-left: 2px solid rgba(117, 52, 63, 0.9); padding-left: 0.6rem; color: #dcd8cf; }
+.dlg-ghost > .rpg-tag.tag-speech { color: #86bfba; }
+.dlg[data-voice="horror"] .dlg-ghost { text-shadow: -1px 0 rgba(117, 52, 63, 0.55), 1px 0 rgba(70, 130, 130, 0.25); }
+.dlg[data-voice="horror"][data-expression="speaking"] .dlg-box { box-shadow: inset 0 0 0 var(--px) #070a14, inset 0 0 0 calc(var(--px) * 1.5) rgba(150, 140, 120, 0.16), inset 0 0 28px rgba(117, 52, 63, 0.25); }
+/* only the voice flickers (hue fringe), never the words, and rarely */
+.dlg[data-voice="horror"] .dlg-ghost { animation: dlg-voice 9s steps(1) infinite; }
+@keyframes dlg-voice {
+  0%, 95%, 98%, 100% { text-shadow: -1px 0 rgba(117, 52, 63, 0.55), 1px 0 rgba(70, 130, 130, 0.25); }
+  96% { text-shadow: -2px 0 rgba(160, 60, 80, 0.7), 2px 0 rgba(70, 130, 130, 0.4); }
+}
+
+/* ghost figure: heavier shadow, cooler tone */
+.enc-ghost svg, .enc-ghost img { filter: saturate(0.9) drop-shadow(0 0 calc(2 * var(--a)) rgba(0, 0, 0, 0.7)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .enc-ash::before, .enc-ash::after, .enc-flicker, .dlg[data-voice="horror"] .dlg-ghost { animation: none !important; }
+  .enc-flicker { opacity: 0; }
+}
+
+/* ================= V5.3: the graveyard at night ================= */
+.landing { position: relative; }
+.landing-dark {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 30%, transparent 0 14%, rgba(2, 3, 8, 0.7) 66%, rgba(1, 2, 5, 0.94) 100%),
+    linear-gradient(rgba(3, 4, 10, 0.5), rgba(3, 4, 10, 0.25) 38%, rgba(2, 3, 7, 0.68));
+}
+.landing-mist { position: fixed; left: 0; right: 0; z-index: 2; pointer-events: none; height: 46vh; background-repeat: repeat-x; background-size: 160% 100%; }
+.landing-mist-a { bottom: 0; background-image: radial-gradient(ellipse 38% 46% at 25% 60%, rgba(110, 140, 150, 0.16), transparent 70%), radial-gradient(ellipse 30% 40% at 78% 70%, rgba(110, 140, 150, 0.12), transparent 70%); animation: mist-drift 70s linear infinite; }
+.landing-mist-b { bottom: 8vh; background-image: radial-gradient(ellipse 34% 40% at 60% 50%, rgba(90, 110, 130, 0.14), transparent 70%); animation: mist-drift 110s linear infinite reverse; }
+@keyframes mist-drift { to { background-position-x: 160%; } }
+.landing .landing-hero { min-height: 0; align-items: center; text-align: center; }
+.landing .landing-hero > * { max-width: 36rem; }
+.landing .landing-hero .rpg-panel { margin-left: auto !important; margin-right: auto !important; background-color: rgba(5, 8, 16, 0.78); }
+.landing .landing-hero p { margin-left: auto !important; margin-right: auto !important; }
+.landing-title { text-shadow: 4px 4px 0 #000, 0 0 30px rgba(107, 184, 177, 0.38); animation: title-flicker 9s steps(1) infinite; }
+@keyframes title-flicker { 0%, 100% { opacity: 1; } 91% { opacity: 1; } 92% { opacity: 0.45; } 93% { opacity: 1; } 95% { opacity: 0.7; } 96% { opacity: 1; } }
+.landing-restless { letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.85; }
+.landing-sound { position: fixed; top: 12px; right: 12px; z-index: 30; }
+
+.graveyard { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 36px 56px; }
+.spirit { position: relative; width: 210px; margin-top: var(--lift); }
+.spirit:hover, .spirit:focus-within { z-index: 20; }
+.spirit-drift { position: relative; display: grid; justify-items: center; gap: 6px; animation: spirit-drift var(--dur) ease-in-out var(--delay) infinite alternate; }
+@keyframes spirit-drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx), var(--dy)); } }
+.spirit-body { position: relative; width: 96px; height: 90px; opacity: 0.8; transition: opacity 0.4s steps(4); }
+.spirit-body svg { width: 96px; height: 90px; filter: brightness(0.2) saturate(0.5) drop-shadow(0 0 14px rgba(120, 150, 160, 0.18)); transition: filter 0.4s steps(4); }
+.spirit-eye { position: absolute; left: 30px; top: 24px; width: 12px; height: 12px; background: #d7efe9; box-shadow: 0 0 10px 2px rgba(150, 230, 215, 0.55); animation: spirit-eye 6s steps(1) infinite; }
+.spirit-eye-r { left: 54px; }
+.spirit[data-status="archived"] .spirit-eye { background: #f3c9d3; box-shadow: 0 0 10px 2px rgba(239, 140, 165, 0.6); }
+.spirit[data-status="quiet"] .spirit-eye { background: #e0d6f7; box-shadow: 0 0 10px 2px rgba(180, 160, 230, 0.55); }
+@keyframes spirit-eye { 0%, 100% { opacity: 1; } 46% { opacity: 1; } 47%, 50% { opacity: 0; } 51% { opacity: 1; } }
+.spirit:hover .spirit-body, .spirit:focus-within .spirit-body { opacity: 1; }
+.spirit:hover .spirit-body svg, .spirit:focus-within .spirit-body svg { filter: brightness(0.6) saturate(0.8) drop-shadow(0 0 16px rgba(160, 200, 205, 0.35)); }
+.spirit-name { margin: 0; text-align: center; line-height: 1.3; text-shadow: 2px 2px 0 #000; }
+.spirit-owner { display: block; font-size: 12px; color: var(--teal); }
+.spirit-repo { display: block; font-size: 12px; line-height: 1.5; color: var(--bone); overflow-wrap: anywhere; }
+.spirit-detail {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: 260px; margin-top: 6px; padding: 12px;
+  background: rgba(3, 5, 11, 0.95); box-shadow: inset 0 0 0 3px #242c3b, 0 0 24px rgba(0, 0, 0, 0.8);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s steps(4);
+}
+.spirit:hover .spirit-detail, .spirit:focus-within .spirit-detail { opacity: 1; pointer-events: auto; }
+.spirit-line { margin: 0 0 6px; font-size: 15px; line-height: 1.4; color: var(--bone); }
+.spirit-meta { margin: 0 0 8px; font-size: 13px; line-height: 1.35; color: var(--bone-dim); }
+.spirit-status { color: var(--gold); }
+.spirit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; }
+.spirit-gh { color: var(--purple-text); text-decoration: underline; text-underline-offset: 4px; font-size: 15px; min-height: 44px; display: inline-flex; align-items: center; }
+.spirit-gh:hover { color: var(--bone); }
+.spirit a:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* phones and touch: nothing to hover, so each presence shows what it is, without the drift */
+@media (hover: none), (max-width: 639px) {
+  .graveyard { flex-direction: column; align-items: center; gap: 28px; }
+  .spirit { width: min(100%, 320px); margin-top: 0; }
+  .spirit-detail { position: relative; top: auto; left: auto; transform: none; width: 100%; opacity: 1; pointer-events: auto; background: rgba(3, 5, 11, 0.78); }
+  .spirit-body { opacity: 0.95; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-title, .spirit-drift, .spirit-eye, .landing-mist { animation: none !important; }
+  .spirit-body, .spirit-body svg, .spirit-detail { transition: none !important; }
+}
+
+/* ================= V5.4: the restless walk the graveyard ================= */
+.graveyard { gap: 64px 36px; align-items: flex-end; }
+.spirit { width: 190px; }
+.spirit-drift { animation: spirit-walk var(--dur) ease-in-out var(--delay) infinite; }
+@keyframes spirit-walk { 0%, 100% { transform: translateX(calc(var(--dx) * -0.5)); } 50% { transform: translateX(calc(var(--dx) * 0.5)); } }
+.spirit-face { position: relative; display: grid; place-items: end center; height: 164px; animation: spirit-turn var(--dur) steps(1) var(--delay) infinite; }
+@keyframes spirit-turn { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+.spirit-figure { --a: 2px; position: relative; display: block; width: 128px; height: 160px; cursor: pointer; filter: brightness(0.36) saturate(0.7) drop-shadow(0 0 12px rgba(120, 150, 160, 0.18)); transition: filter 0.4s steps(4); }
+.spirit:hover .spirit-figure, .spirit:focus-within .spirit-figure { filter: brightness(0.96) saturate(1) drop-shadow(0 0 16px rgba(170, 210, 215, 0.35)); }
+.spirit-veil { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(3, 5, 10, 0.94) 0 16%, rgba(3, 5, 10, 0.6) 40%, transparent 78%); transition: opacity 0.4s steps(4); }
+.spirit:hover .spirit-veil, .spirit:focus-within .spirit-veil { opacity: 0.2; }
+/* things that stand in front of some of them: a stone, a fence */
+.spirit:nth-child(3n + 1) .spirit-face::after { content: ""; position: absolute; left: 4px; bottom: 0; width: 50px; height: 62px; z-index: 2; pointer-events: none; background: #04060d; border-radius: 25px 25px 0 0; box-shadow: inset 0 0 0 3px #0e1429, inset 6px 0 0 0 #070b18; }
+.spirit:nth-child(3n + 2) .spirit-face::after { content: ""; position: absolute; right: 0; bottom: 0; width: 84px; height: 54px; z-index: 2; pointer-events: none; background: repeating-linear-gradient(90deg, #04060d 0 4px, transparent 4px 12px), linear-gradient(#04060d, #04060d) 0 22px / 100% 3px no-repeat; }
+.spirit-name { margin-top: 2px; }
+.spirit-owner, .spirit-repo { font-size: 12px; }
+@media (hover: none), (max-width: 639px) {
+  .graveyard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 10px; justify-items: center; }
+  .spirit { width: 100%; max-width: 170px; margin-top: 0; }
+  .spirit-drift { animation-name: spirit-walk-small; }
+  .spirit-face { height: 164px; }
+  .spirit-figure { filter: brightness(0.62) saturate(0.85); }
+  .spirit-veil { opacity: 0.55; }
+  .spirit-detail { position: relative; top: auto; left: auto; transform: none; width: 100%; margin-top: 4px; padding: 8px; opacity: 1; pointer-events: auto; background: rgba(3, 5, 11, 0.8); }
+  .spirit-line { display: none; }
+  .spirit-meta { font-size: 12px; margin-bottom: 4px; }
+}
+@keyframes spirit-walk-small { 0%, 100% { transform: translateX(calc(var(--dx) * -0.12)); } 50% { transform: translateX(calc(var(--dx) * 0.12)); } }
+@media (prefers-reduced-motion: reduce) {
+  .spirit-drift, .spirit-face { animation: none !important; }
+  .spirit-figure, .spirit-veil { transition: none !important; }
+}
+
+/* --- summoning: fog rises, the lantern gutters, the dark closes --- */
+.summon-veil { position: fixed; inset: 0; z-index: 200; background: #000; opacity: 0; animation: summon-dark 0.9s steps(9) forwards; overflow: hidden; }
+@keyframes summon-dark { 0% { opacity: 0; } 30% { opacity: 0.45; } 100% { opacity: 1; } }
+.summon-fog { position: absolute; left: -20%; right: -20%; height: 55%; background: radial-gradient(ellipse at 50% 60%, rgba(150, 180, 190, 0.5), transparent 70%); animation: summon-fog 0.9s ease-out forwards; }
+.summon-fog-a { bottom: -12%; } .summon-fog-b { bottom: -34%; animation-delay: 0.12s; }
+@keyframes summon-fog { from { transform: translateY(45%); opacity: 0; } to { transform: translateY(-35%); opacity: 1; } }
+.summon-lamp { position: absolute; left: 50%; top: 46%; width: 240px; height: 240px; margin: -120px 0 0 -120px; background: radial-gradient(circle, rgba(255, 200, 110, 0.6), transparent 65%); animation: summon-lamp 0.9s steps(1) forwards; }
+@keyframes summon-lamp { 0% { opacity: 0; } 10% { opacity: 1; } 20% { opacity: 0.3; } 30% { opacity: 1; } 45% { opacity: 0.15; } 55% { opacity: 0.8; } 70% { opacity: 0.1; } 85% { opacity: 0.4; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .summon-veil { display: none; } }
+
+/* the ghosts fade into the fog at their feet; no hard rectangle around them */
+.spirit-veil { display: none; }
+.spirit-figure { filter: brightness(0.5) saturate(0.75) drop-shadow(0 0 12px rgba(120, 150, 160, 0.18)); -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.12), #000 58%); mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.12), #000 58%); }
+.spirit:hover .spirit-figure, .spirit:focus-within .spirit-figure { -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), #000 40%); mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), #000 40%); }
+@media (hover: none), (max-width: 639px) { .spirit-figure { filter: brightness(0.7) saturate(0.85); } }
+
+/* six ghosts in one row on a wide screen */
+@media (min-width: 1100px) { .graveyard { gap: 64px 20px; } .spirit { width: 162px; } }
+
+/* ================= V6.1: unrevealed presences ================= */
+.presences { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 56px 44px; }
+.presence { position: relative; width: 120px; margin-top: var(--lift); }
+.presence-drift { animation: spirit-walk var(--dur) ease-in-out var(--delay) infinite; }
+.presence-face { display: grid; place-items: end center; min-height: 140px; animation: spirit-turn var(--dur) steps(1) var(--delay) infinite; }
+.presence-btn { position: relative; display: grid; justify-items: center; gap: 8px; padding: 14px 18px 8px; min-width: 44px; min-height: 44px; background: transparent; border: 0; cursor: pointer; color: var(--bone-dim); }
+.presence-btn svg { filter: drop-shadow(0 0 14px rgba(120, 160, 170, 0.25)); opacity: 0.78; transition: opacity 0.4s steps(4), filter 0.4s steps(4); -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.1), #000 62%); mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.1), #000 62%); }
+.presence-btn:hover svg, .presence-btn:focus-visible svg { opacity: 1; filter: drop-shadow(0 0 18px rgba(190, 235, 230, 0.55)); }
+.presence-eye { animation: presence-blink 7s steps(1) infinite; }
+@keyframes presence-blink { 0%, 100% { opacity: 1; } 47% { opacity: 1; } 48%, 50% { opacity: 0; } 51% { opacity: 1; } }
+.presence-cue { font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); opacity: 0; transform: translateY(-2px); transition: opacity 0.3s steps(3); }
+.presence-btn:hover .presence-cue, .presence-btn:focus-visible .presence-cue { opacity: 1; }
+.presence-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+.presence:nth-child(3n + 1) .presence-face::after { content: ""; position: absolute; width: 46px; height: 58px; margin-left: -62px; margin-top: 70px; background: #04060d; border-radius: 23px 23px 0 0; box-shadow: inset 0 0 0 3px #0e1429; pointer-events: none; }
+@media (min-width: 1100px) { .presences { gap: 64px 52px; } }
+@media (hover: none), (max-width: 639px) {
+  .presences { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 10px; justify-items: center; }
+  .presence { width: 100%; margin-top: 0; }
+  .presence-drift { animation-name: spirit-walk-small; }
+  .presence-cue { opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) { .presence-drift, .presence-face, .presence-eye { animation: none !important; } .presence-btn svg, .presence-cue { transition: none !important; } }

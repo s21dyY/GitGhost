@@ -83,7 +83,7 @@ Generate up to 3 realistic quests based on current default-branch SHA and retrie
 **Character layers** (all configuration-driven, no runtime image generation):
 1. **Human origin** by purpose signals, not real developer demographics: Archivist (docs/book), Radio Operator (audio/receiver), Clockmaker (automation/watch), Watchkeeper (security/lantern). Unknown→Archivist.
 2. **Horror voice:** regret, haunting, body, cosmic, monster, existential (6 text configs; bodies reusable).
-3. **Temperament:** restrained, irritable, tender, curious, formal.
+3. **Temperament:** reserved, irritable, tender, curious, formal.
 4. **Mutation:** human → distorted → transformed; stable recognizable signature object/anchor and seeded art parts.
 5. **Ephemeral reaction:** thinking, startled, pleased, wistful; may change with conversation but does not reroll identity.
 

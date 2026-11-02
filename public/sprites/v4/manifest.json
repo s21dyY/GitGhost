@@ -1,0 +1,99 @@
+{
+ "width": 64,
+ "height": 80,
+ "forms": [
+  "human",
+  "distorted",
+  "horror"
+ ],
+ "exprs": [
+  "neutral",
+  "melancholy",
+  "amused",
+  "angry",
+  "disturbed",
+  "eldritch"
+ ],
+ "states": [
+  "idle",
+  "speak",
+  "blink",
+  "twitchA",
+  "twitchB",
+  "freeze"
+ ],
+ "cols": 6,
+ "rows": 6,
+ "transform": [
+  {
+   "t": 0,
+   "ms": 700,
+   "note": "the person"
+  },
+  {
+   "t": 0.06,
+   "ms": 260,
+   "note": "something is wrong behind the eyes"
+  },
+  {
+   "t": 0.14,
+   "ms": 160,
+   "note": "the first flinch"
+  },
+  {
+   "t": 0.24,
+   "ms": 150,
+   "note": "the eyes drift apart"
+  },
+  {
+   "t": 0.34,
+   "ms": 150,
+   "note": "the jaw gives"
+  },
+  {
+   "t": 0.44,
+   "ms": 190,
+   "note": "veins; the face stretches"
+  },
+  {
+   "t": 0.5,
+   "ms": 380,
+   "note": "distorted: it stops. It looks at you."
+  },
+  {
+   "t": 0.6,
+   "ms": 170,
+   "note": "the skin goes slack"
+  },
+  {
+   "t": 0.72,
+   "ms": 170,
+   "note": "the face empties"
+  },
+  {
+   "t": 0.84,
+   "ms": 190,
+   "note": "new eyes open"
+  },
+  {
+   "t": 0.94,
+   "ms": 190,
+   "note": "it settles"
+  },
+  {
+   "t": 1,
+   "ms": 700,
+   "note": "eldritch"
+  }
+ ],
+ "drip": {
+  "w": 8,
+  "frames": 13,
+  "fallA": 8,
+  "fallB": 12
+ },
+ "idle": {
+  "frames": 24,
+  "ms": 180
+ }
+}

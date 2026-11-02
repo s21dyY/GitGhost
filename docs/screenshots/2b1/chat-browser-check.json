@@ -1,0 +1,208 @@
+{
+  "base": "http://localhost:3931",
+  "path": "/repo/atom/atom",
+  "chrome": "156.0.8078.74",
+  "desktop": {
+    "initial": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "starters": 4
+    },
+    "posesSeen": [
+      "thinking",
+      "speaking"
+    ],
+    "firstAnswer": {
+      "text": "Scripted reply: composed from the retrieved sources by fixed templates. No AI model was called.\n\nGhostThe stars fit inside the crack. They should not.\n\nGhostbeyond… orbit… this remains:\n\nFrom the recordGitHub lists atom/atom as archived, which makes it read-only.[1]\n\nFrom the recordThe last push GitHub records on this repository is 2023-01-03.[1]\n\nFrom the recordThe newest commit I retrieved on the default branch reads “Merge pull request #25709 from atom/fix-snapshot-result-macos 2022-11-22T16:11:57.000Z”.[2]\n\nFrom the recordThe README says “Atom and all repositories under Atom will be archived on December 15, 2022.”[3]\n\nFrom the recordIssue #6867, titled “Atom packages that require an upgr",
+      "linkCount": 10,
+      "allGitHub": true,
+      "allNewTabSafe": true,
+      "scriptedBadge": true
+    },
+    "afterAnswer": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false
+    },
+    "shiftEnter": {
+      "value": "What happened lately?\nBe brief.",
+      "sentYet": 1
+    },
+    "doubleEnterRequests": 1,
+    "followUp": {
+      "historyTurns": 4,
+      "question": "tell me more",
+      "form": "current",
+      "bodyKeys": [
+        "form",
+        "history",
+        "owner",
+        "question",
+        "repo"
+      ]
+    },
+    "voices": {
+      "humanHasEllipsis": false,
+      "horrorHasEllipsis": true,
+      "humanSample": [
+        "GhostI remember how these pages felt when they were new.",
+        "GhostI will read it plainly."
+      ],
+      "horrorSample": [
+        "GhostThe stars fit inside the crack. They should not.",
+        "Ghostaperture… distance… this remains:"
+      ]
+    },
+    "userMessageCount": 5,
+    "errorState": {
+      "text": "GitHub could not be reached. Try again shortly. |  | Try again",
+      "retryButton": 1
+    },
+    "retry": {
+      "youLabelsBeforeRetry": 6,
+      "youLabelsAfterRetry": 6,
+      "requestsDuringErrorAndRetry": 2,
+      "alertGone": true
+    },
+    "tabStops": [
+      {
+        "el": "button:Before the forgetting",
+        "visible": true
+      },
+      {
+        "el": "button:Why did you die?",
+        "visible": true
+      },
+      {
+        "el": "button:What happened lately?",
+        "visible": true
+      },
+      {
+        "el": "button:How did you begin?",
+        "visible": true
+      },
+      {
+        "el": "button:What were people complaining",
+        "visible": true
+      },
+      {
+        "el": "textarea:_R_f9bsnpfivb_-q",
+        "visible": true
+      }
+    ],
+    "liveRegions": {
+      "log": "polite",
+      "status": true,
+      "labelledTextarea": true
+    },
+    "consoleErrors": []
+  },
+  "mobile": {
+    "initial": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "starters": 4
+    },
+    "posesSeen": [
+      "speaking"
+    ],
+    "firstAnswer": {
+      "text": "Scripted reply: composed from the retrieved sources by fixed templates. No AI model was called.\n\nGhostThe stars fit inside the crack. They should not.\n\nGhostbeyond… orbit… this remains:\n\nFrom the recordGitHub lists atom/atom as archived, which makes it read-only.[1]\n\nFrom the recordThe last push GitHub records on this repository is 2023-01-03.[1]\n\nFrom the recordThe newest commit I retrieved on the default branch reads “Merge pull request #25709 from atom/fix-snapshot-result-macos 2022-11-22T16:11:57.000Z”.[2]\n\nFrom the recordThe README says “Atom and all repositories under Atom will be archived on December 15, 2022.”[3]\n\nFrom the recordIssue #6867, titled “Atom packages that require an upgr",
+      "linkCount": 10,
+      "allGitHub": true,
+      "allNewTabSafe": true,
+      "scriptedBadge": true
+    },
+    "afterAnswer": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false
+    },
+    "shiftEnter": {
+      "value": "What happened lately?\nBe brief.",
+      "sentYet": 1
+    },
+    "doubleEnterRequests": 1,
+    "followUp": {
+      "historyTurns": 4,
+      "question": "tell me more",
+      "form": "current",
+      "bodyKeys": [
+        "form",
+        "history",
+        "owner",
+        "question",
+        "repo"
+      ]
+    },
+    "voices": {
+      "humanHasEllipsis": false,
+      "horrorHasEllipsis": true,
+      "humanSample": [
+        "GhostI remember how these pages felt when they were new.",
+        "GhostI will read it plainly."
+      ],
+      "horrorSample": [
+        "GhostThe stars fit inside the crack. They should not.",
+        "Ghostaperture… distance… this remains:"
+      ]
+    },
+    "userMessageCount": 5,
+    "errorState": {
+      "text": "GitHub could not be reached. Try again shortly. |  | Try again",
+      "retryButton": 1
+    },
+    "retry": {
+      "youLabelsBeforeRetry": 6,
+      "youLabelsAfterRetry": 6,
+      "requestsDuringErrorAndRetry": 2,
+      "alertGone": true
+    },
+    "tabStops": [
+      {
+        "el": "button:Before the forgetting",
+        "visible": true
+      },
+      {
+        "el": "button:Why did you die?",
+        "visible": true
+      },
+      {
+        "el": "button:What happened lately?",
+        "visible": true
+      },
+      {
+        "el": "button:How did you begin?",
+        "visible": true
+      },
+      {
+        "el": "button:What were people complaining",
+        "visible": true
+      },
+      {
+        "el": "textarea:_R_f9bsnpfivb_-q",
+        "visible": true
+      }
+    ],
+    "liveRegions": {
+      "log": "polite",
+      "status": true,
+      "labelledTextarea": true
+    },
+    "consoleErrors": []
+  },
+  "reducedMotion": {
+    "pose": "speaking",
+    "animA": "none",
+    "animB": "none",
+    "opacityB": "0"
+  },
+  "normalMotion": {
+    "pose": "speaking",
+    "animA": "ghost-a",
+    "animB": "ghost-b",
+    "opacityB": "0"
+  }
+}

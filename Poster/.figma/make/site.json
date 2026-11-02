@@ -1,0 +1,10 @@
+{
+  "description": "GitGhost turns GitHub repository history into interactive AI characters, helping developers explore unfamiliar code and recover the context behind past engineering decisions.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

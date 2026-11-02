@@ -1,0 +1,12 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OnlyTheDevUserForThisTest",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::__ACCOUNT_ID__:user/kiroween-dev" },
+      "Action": "sts:AssumeRole",
+      "Condition": { "StringEquals": { "sts:RoleSessionName": "gitghost-2c2" } }
+    }
+  ]
+}

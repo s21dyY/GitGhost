@@ -1,0 +1,321 @@
+{
+  "base": "http://localhost:3951",
+  "repoPath": "/repo/atom/atom",
+  "chrome": "156.0.8078.74",
+  "desktop": {
+    "landing": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "tabStops": [
+        {
+          "el": "a:Skip to content",
+          "visible": true
+        },
+        {
+          "el": "input:repository",
+          "visible": true
+        },
+        {
+          "el": "button:Summon",
+          "visible": true
+        },
+        {
+          "el": "a:Summon atom/atom",
+          "visible": true
+        },
+        {
+          "el": "a:atom/atom on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon mozilla/send",
+          "visible": true
+        },
+        {
+          "el": "a:mozilla/send on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon request/request",
+          "visible": true
+        },
+        {
+          "el": "a:request/request on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon bower/bower",
+          "visible": true
+        },
+        {
+          "el": "a:bower/bower on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon moment/moment",
+          "visible": true
+        },
+        {
+          "el": "a:moment/moment on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon mozilla/pdf.js",
+          "visible": true
+        },
+        {
+          "el": "a:mozilla/pdf.js on GitHub (opens in a new tab)",
+          "visible": true
+        }
+      ]
+    },
+    "summonForm": {
+      "emptyMsg": "Enter a repository such as owner/repo.",
+      "badHostMsg": "Only github.com repositories can be summoned.",
+      "ariaInvalid": "true",
+      "navigatedTo": "/repo/atom/atom"
+    },
+    "seance": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "ghostBox": {
+        "w": 288,
+        "h": 384
+      },
+      "tabStops": [
+        {
+          "el": "a:Skip to content",
+          "visible": true
+        },
+        {
+          "el": "a:← Back to the graveyard",
+          "visible": true
+        },
+        {
+          "el": "button:Before the forgetting",
+          "visible": true
+        },
+        {
+          "el": "button:As it is now",
+          "visible": true
+        },
+        {
+          "el": "summary:Describe the apparition",
+          "visible": true
+        },
+        {
+          "el": "div:Conversation",
+          "visible": true
+        },
+        {
+          "el": "button:▶ Why did you die?",
+          "visible": true
+        },
+        {
+          "el": "button:▶ What happened lately?",
+          "visible": true
+        },
+        {
+          "el": "button:▶ How did you begin?",
+          "visible": true
+        },
+        {
+          "el": "button:▶ What were people complaining",
+          "visible": true
+        },
+        {
+          "el": "textarea:_R_1l5fiv5ubvb_-q",
+          "visible": true
+        },
+        {
+          "el": "a:1c3bd35 (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "summary:Evidence journalNo answers yet",
+          "visible": true
+        }
+      ],
+      "hasDevTools": false,
+      "hasPreviewSelector": false,
+      "bodyShowsSeed": false
+    },
+    "error_missing": "Nothing to summon\n\nGitHub has no public record of that.\n\nYou asked for: mozilla/this-repo-does-not-exist-gg\n\nCheck the n",
+    "error_invalid": "Invalid repository\n\nThe repository name is not valid. Use letters, numbers, dots, hyphens and underscores.\n\nYou asked fo",
+    "forms": {
+      "current": "distorted",
+      "pressedAtStart": "false/true",
+      "humanViaToggle": "human",
+      "pressedAfter": "true/false",
+      "restoredViaKeyboard": "distorted"
+    },
+    "consoleErrors": []
+  },
+  "mobile": {
+    "landing": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "tabStops": [
+        {
+          "el": "a:Skip to content",
+          "visible": true
+        },
+        {
+          "el": "input:repository",
+          "visible": true
+        },
+        {
+          "el": "button:Summon",
+          "visible": true
+        },
+        {
+          "el": "a:Summon atom/atom",
+          "visible": true
+        },
+        {
+          "el": "a:atom/atom on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon mozilla/send",
+          "visible": true
+        },
+        {
+          "el": "a:mozilla/send on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon request/request",
+          "visible": true
+        },
+        {
+          "el": "a:request/request on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon bower/bower",
+          "visible": true
+        },
+        {
+          "el": "a:bower/bower on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon moment/moment",
+          "visible": true
+        },
+        {
+          "el": "a:moment/moment on GitHub (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "a:Summon mozilla/pdf.js",
+          "visible": true
+        },
+        {
+          "el": "a:mozilla/pdf.js on GitHub (opens in a new tab)",
+          "visible": true
+        }
+      ]
+    },
+    "summonForm": {
+      "emptyMsg": "Enter a repository such as owner/repo.",
+      "badHostMsg": "Only github.com repositories can be summoned.",
+      "ariaInvalid": "true",
+      "navigatedTo": "/repo/atom/atom"
+    },
+    "seance": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "ghostBox": {
+        "w": 216,
+        "h": 288
+      },
+      "tabStops": [
+        {
+          "el": "a:Skip to content",
+          "visible": true
+        },
+        {
+          "el": "a:← Back to the graveyard",
+          "visible": true
+        },
+        {
+          "el": "button:Before the forgetting",
+          "visible": true
+        },
+        {
+          "el": "button:As it is now",
+          "visible": true
+        },
+        {
+          "el": "summary:Describe the apparition",
+          "visible": true
+        },
+        {
+          "el": "div:Conversation",
+          "visible": true
+        },
+        {
+          "el": "button:▶ Why did you die?",
+          "visible": true
+        },
+        {
+          "el": "button:▶ What happened lately?",
+          "visible": true
+        },
+        {
+          "el": "button:▶ How did you begin?",
+          "visible": true
+        },
+        {
+          "el": "button:▶ What were people complaining",
+          "visible": true
+        },
+        {
+          "el": "textarea:_R_1l5fiv5ubvb_-q",
+          "visible": true
+        },
+        {
+          "el": "a:1c3bd35 (opens in a new tab)",
+          "visible": true
+        },
+        {
+          "el": "summary:Evidence journalNo answers yet",
+          "visible": true
+        }
+      ],
+      "hasDevTools": false,
+      "hasPreviewSelector": false,
+      "bodyShowsSeed": false
+    },
+    "error_missing": "Nothing to summon\n\nGitHub has no public record of that.\n\nYou asked for: mozilla/this-repo-does-not-exist-gg\n\nCheck the n",
+    "error_invalid": "Invalid repository\n\nThe repository name is not valid. Use letters, numbers, dots, hyphens and underscores.\n\nYou asked fo",
+    "forms": {
+      "current": "distorted",
+      "pressedAtStart": "false/true",
+      "humanViaToggle": "human",
+      "pressedAfter": "true/false",
+      "restoredViaKeyboard": "distorted"
+    },
+    "consoleErrors": []
+  },
+  "motionNoPreference": {
+    "media": false,
+    "animationName": "ghost-bob",
+    "minY": 122.00106811523438,
+    "maxY": 123.99333953857422,
+    "moved": true
+  },
+  "motionReduce": {
+    "media": true,
+    "animationName": "none",
+    "minY": 124,
+    "maxY": 124,
+    "moved": false
+  }
+}

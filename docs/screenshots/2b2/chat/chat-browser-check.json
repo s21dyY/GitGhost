@@ -1,0 +1,276 @@
+{
+  "base": "http://localhost:3951",
+  "path": "/repo/atom/atom",
+  "chrome": "156.0.8078.74",
+  "desktop": {
+    "initial": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "starters": 4
+    },
+    "posesSeen": [
+      "thinking",
+      "speaking",
+      "idle"
+    ],
+    "revealWasInProgress": true,
+    "firstAnswer": {
+      "text": "♦ GHOSTThe stars fit inside the crack. They should not.\n\n♦ GHOSTbeyond… orbit… this remains:\n\n✦ RECORDGitHub lists atom/atom as archived, which makes it read-only.[1]\n\n✦ RECORDThe last push GitHub records on this repository is 2023-01-03.[1]\n\n✦ RECORDThe newest commit I retrieved on the default branch reads “Merge pull request #25709 from atom/fix-snapshot-result-macos 2022-11-22T16:11:57.000Z”.[2]\n\n✦ RECORDThe README says “Atom and all repositories under Atom will be archived on December 15, 2022.”[3]\n\n✦ RECORDIssue #6867, titled “Atom packages that require an upgrade to 1.0 API”, mentions “deprecations”.[4]\n\n◇ READINGArchiving is a choice made by a repository's owners, and the metadata I r",
+      "linkCount": 6,
+      "allGitHub": true,
+      "allNewTabSafe": true,
+      "scriptedBadge": true
+    },
+    "afterAnswer": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false
+    },
+    "journal": {
+      "open": true,
+      "focusedEntry": "journal-entry-1",
+      "claimTags": [
+        "RECORD",
+        "RECORD",
+        "RECORD",
+        "RECORD",
+        "RECORD",
+        "READING"
+      ],
+      "sourceLinks": [
+        "https://github.com/atom/atom",
+        "https://github.com/atom/atom/commit/1c3bd35ce238dc0491def9e1780d04748d8e18af",
+        "https://github.com/atom/atom/blob/1c3bd35ce238dc0491def9e1780d04748d8e18af/README.md",
+        "https://github.com/atom/atom/issues/6867"
+      ],
+      "chatTurnsKept": true,
+      "ghostLinesFiled": false
+    },
+    "shiftEnter": {
+      "value": "What happened lately?\nBe brief.",
+      "sentYet": 1
+    },
+    "doubleEnterRequests": 1,
+    "followUp": {
+      "historyTurns": 4,
+      "question": "tell me more",
+      "form": "current",
+      "bodyKeys": [
+        "form",
+        "history",
+        "owner",
+        "question",
+        "repo"
+      ]
+    },
+    "voices": {
+      "humanHasEllipsis": false,
+      "horrorHasEllipsis": true,
+      "humanSample": [],
+      "horrorSample": []
+    },
+    "userMessageCount": 5,
+    "loading": {
+      "thinkingPose": "thinking",
+      "sendDisabled": true,
+      "statusText": "The ghost is thinking."
+    },
+    "errorState": {
+      "text": "ERRORGitHub could not be reached. Try again shortly. |  | TRY AGAIN",
+      "retryButton": 1
+    },
+    "retry": {
+      "youLabelsBeforeRetry": 7,
+      "youLabelsAfterRetry": 7,
+      "requestsDuringErrorAndRetry": 2,
+      "alertGone": true
+    },
+    "tabStops": [
+      {
+        "el": "button:Before the forgetting",
+        "visible": true
+      },
+      {
+        "el": "button:As it is now",
+        "visible": true
+      },
+      {
+        "el": "div:Conversation",
+        "visible": true
+      },
+      {
+        "el": "button:▶ Why did you die?",
+        "visible": true
+      },
+      {
+        "el": "button:▶ What happened lately?",
+        "visible": true
+      },
+      {
+        "el": "button:▶ How did you begin?",
+        "visible": true
+      },
+      {
+        "el": "button:▶ What were people complaini",
+        "visible": true
+      },
+      {
+        "el": "textarea:_R_1l5fiv5ubvb_-q",
+        "visible": true
+      },
+      {
+        "el": "summary:Evidence journalNo answers y",
+        "visible": true
+      }
+    ],
+    "liveRegions": {
+      "logLive": "off",
+      "logFocusable": "0",
+      "status": true,
+      "labelledTextarea": true
+    },
+    "consoleErrors": []
+  },
+  "mobile": {
+    "initial": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false,
+      "starters": 4
+    },
+    "posesSeen": [
+      "speaking",
+      "idle"
+    ],
+    "revealWasInProgress": true,
+    "firstAnswer": {
+      "text": "♦ GHOSTThe stars fit inside the crack. They should not.\n\n♦ GHOSTbeyond… orbit… this remains:\n\n✦ RECORDGitHub lists atom/atom as archived, which makes it read-only.[1]\n\n✦ RECORDThe last push GitHub records on this repository is 2023-01-03.[1]\n\n✦ RECORDThe newest commit I retrieved on the default branch reads “Merge pull request #25709 from atom/fix-snapshot-result-macos 2022-11-22T16:11:57.000Z”.[2]\n\n✦ RECORDThe README says “Atom and all repositories under Atom will be archived on December 15, 2022.”[3]\n\n✦ RECORDIssue #6867, titled “Atom packages that require an upgrade to 1.0 API”, mentions “deprecations”.[4]\n\n◇ READINGArchiving is a choice made by a repository's owners, and the metadata I r",
+      "linkCount": 6,
+      "allGitHub": true,
+      "allNewTabSafe": true,
+      "scriptedBadge": true
+    },
+    "afterAnswer": {
+      "minFont": 12,
+      "contrastFails": [],
+      "overflowX": false
+    },
+    "journal": {
+      "open": true,
+      "focusedEntry": "journal-entry-1",
+      "claimTags": [
+        "RECORD",
+        "RECORD",
+        "RECORD",
+        "RECORD",
+        "RECORD",
+        "READING"
+      ],
+      "sourceLinks": [
+        "https://github.com/atom/atom",
+        "https://github.com/atom/atom/commit/1c3bd35ce238dc0491def9e1780d04748d8e18af",
+        "https://github.com/atom/atom/blob/1c3bd35ce238dc0491def9e1780d04748d8e18af/README.md",
+        "https://github.com/atom/atom/issues/6867"
+      ],
+      "chatTurnsKept": true,
+      "ghostLinesFiled": false
+    },
+    "shiftEnter": {
+      "value": "What happened lately?\nBe brief.",
+      "sentYet": 1
+    },
+    "doubleEnterRequests": 1,
+    "followUp": {
+      "historyTurns": 4,
+      "question": "tell me more",
+      "form": "current",
+      "bodyKeys": [
+        "form",
+        "history",
+        "owner",
+        "question",
+        "repo"
+      ]
+    },
+    "voices": {
+      "humanHasEllipsis": false,
+      "horrorHasEllipsis": true,
+      "humanSample": [],
+      "horrorSample": []
+    },
+    "userMessageCount": 5,
+    "loading": {
+      "thinkingPose": "thinking",
+      "sendDisabled": true,
+      "statusText": "The ghost is thinking."
+    },
+    "errorState": {
+      "text": "ERRORGitHub could not be reached. Try again shortly. |  | TRY AGAIN",
+      "retryButton": 1
+    },
+    "retry": {
+      "youLabelsBeforeRetry": 7,
+      "youLabelsAfterRetry": 7,
+      "requestsDuringErrorAndRetry": 2,
+      "alertGone": true
+    },
+    "tabStops": [
+      {
+        "el": "button:Before the forgetting",
+        "visible": true
+      },
+      {
+        "el": "button:As it is now",
+        "visible": true
+      },
+      {
+        "el": "div:Conversation",
+        "visible": true
+      },
+      {
+        "el": "button:▶ Why did you die?",
+        "visible": true
+      },
+      {
+        "el": "button:▶ What happened lately?",
+        "visible": true
+      },
+      {
+        "el": "button:▶ How did you begin?",
+        "visible": true
+      },
+      {
+        "el": "button:▶ What were people complaini",
+        "visible": true
+      },
+      {
+        "el": "textarea:_R_1l5fiv5ubvb_-q",
+        "visible": true
+      },
+      {
+        "el": "summary:Evidence journalNo answers y",
+        "visible": true
+      }
+    ],
+    "liveRegions": {
+      "logLive": "off",
+      "logFocusable": "0",
+      "status": true,
+      "labelledTextarea": true
+    },
+    "consoleErrors": []
+  },
+  "reducedMotion": {
+    "pose": "speaking",
+    "animA": "none",
+    "animB": "none",
+    "opacityB": "0"
+  },
+  "normalMotion": {
+    "pose": "speaking",
+    "animA": "ghost-a",
+    "animB": "ghost-b",
+    "opacityB": "0"
+  }
+}
