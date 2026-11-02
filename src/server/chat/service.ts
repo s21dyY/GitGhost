@@ -63,6 +63,12 @@ export type ChatDeps = {
    * may have been billed, never the provider's message. It cannot change the outcome.
    */
   onProviderError?: (e: { code: string; outcome: "not_billed" | "unknown" }) => void;
+  /**
+   * Whose counters this call uses. "chat" (default) keeps the original keys. "specialist" (deep code analysis,
+   * src/server/specialist) counts its requests, budget and rate limit separately, and must also pass its own kill
+   * switch, KILL#specialist, on top of the shared KILL#bedrock. The concurrency lease is shared.
+   */
+  ledger?: "chat" | "specialist";
 };
 
 /**
@@ -98,6 +104,12 @@ const fail = (status: number, code: ChatFailureCode, message: string, retryAfter
 
 const DAY_TTL = 3 * 86_400;
 const KILL_FLAG = "KILL#bedrock";
+const SPECIALIST_KILL_FLAG = "KILL#specialist";
+/** Counter keys per ledger. Chat's are the original ones, unchanged. */
+const keysFor = (ledger: "chat" | "specialist", day: string) =>
+  ledger === "chat"
+    ? { rate: "RL#chat", requests: `REQ#bedrock#${day}`, budget: `BUDGET#${day}` }
+    : { rate: "RL#specialist", requests: `REQ#specialist#${day}`, budget: `BUDGET#specialist#${day}` };
 
 // Per-process fallback for free requests only.
 let defaultLocal: UsageStore | undefined;
@@ -140,7 +152,8 @@ export async function runChat(input: ChatInput, deps: ChatDeps = {}): Promise<Ch
 
   // Free requests may use the shared store, but fall back to process memory if it fails.
   // Billable requests never fall back.
-  const rateKey = `RL#chat#${identity.key}#${Math.floor(now() / 60_000)}`;
+  const ledger = deps.ledger ?? "chat";
+  const rateKey = `${keysFor(ledger, "").rate}#${identity.key}#${Math.floor(now() / 60_000)}`;
   const rateStore = wantsBedrock ? sharedStore : (sharedStore ?? local);
   if (!rateStore) return fail(503, "budget_unavailable", "Chat is unavailable right now.");
   let rate;
@@ -167,6 +180,7 @@ export async function runChat(input: ChatInput, deps: ChatDeps = {}): Promise<Ch
   const store = sharedStore!;
   const id = (deps.newId ?? randomUUID)();
   const day = utcDay(now());
+  const keys = keysFor(ledger, day);
   const reserve = maxRequestCostMicros(c);
   let lease: number | null = null;
   let countedRequest = false;
@@ -174,25 +188,26 @@ export async function runChat(input: ChatInput, deps: ChatDeps = {}): Promise<Ch
 
   const undo = async () => {
     // Best effort. If a refund fails we stay conservative (the counters stay over-counted).
-    if (reserved) await store.add(`BUDGET#${day}`, -reserve, DAY_TTL).catch(() => undefined);
-    if (countedRequest) await store.add(`REQ#bedrock#${day}`, -1, DAY_TTL).catch(() => undefined);
+    if (reserved) await store.add(keys.budget, -reserve, DAY_TTL).catch(() => undefined);
+    if (countedRequest) await store.add(keys.requests, -1, DAY_TTL).catch(() => undefined);
     if (lease !== null) await store.releaseLease("LEASE#bedrock", lease, id).catch(() => undefined);
   };
 
   try {
     if (await store.getFlag(KILL_FLAG)) return fail(503, "kill_switch", "Model-backed chat is switched off.");
+    if (ledger === "specialist" && (await store.getFlag(SPECIALIST_KILL_FLAG))) return fail(503, "kill_switch", "The Specialist is switched off.");
 
     lease = await store.acquireLease("LEASE#bedrock", c.globalConcurrency, c.timeoutMs + 10_000, id);
     if (lease === null) return fail(429, "busy", "The ghost is busy answering others. Try again shortly.", 5);
 
-    const req = await store.incrementIfBelow(`REQ#bedrock#${day}`, c.globalPerDay, DAY_TTL);
+    const req = await store.incrementIfBelow(keys.requests, c.globalPerDay, DAY_TTL);
     if (!req.ok) {
       await undo();
       return fail(429, "daily_limit", "Today's question limit has been reached. Try again tomorrow (UTC).");
     }
     countedRequest = true;
 
-    const budget = await store.addIfWithin(`BUDGET#${day}`, reserve, c.dailyBudgetMicros, DAY_TTL);
+    const budget = await store.addIfWithin(keys.budget, reserve, c.dailyBudgetMicros, DAY_TTL);
     if (!budget.ok) {
       await undo();
       return fail(429, "budget_exhausted", "Today's spending limit has been reached. Try again tomorrow (UTC).");
@@ -231,7 +246,7 @@ export async function runChat(input: ChatInput, deps: ChatDeps = {}): Promise<Ch
       const actual = costMicros(response.usage, c);
       spent = actual;
       try {
-        await store.add(`BUDGET#${day}`, actual - reserve, DAY_TTL); // usually a refund; positive if we under-reserved
+        await store.add(keys.budget, actual - reserve, DAY_TTL); // usually a refund; positive if we under-reserved
       } catch (err) {
         spent = reserve; // reconcile failed: the reservation stands
         log("reconcile_failed", { name: (err as Error).name });

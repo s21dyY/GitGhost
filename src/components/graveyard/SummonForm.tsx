@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { parseRepoInput, repoPath } from "@/domain/repo-ref";
 import { createLatestGuard } from "@/lib/latest-request";
-import { RPGPanel } from "@/components/rpg/RPGPanel";
 import { useSummon } from "./SummonProvider";
 
 type Status = "idle" | "checking";
@@ -51,7 +50,7 @@ export function SummonForm() {
         return;
       }
       setStatus("idle");
-      summon(repoPath({ owner: body.owner, repo: body.repo }));
+      summon(repoPath({ owner: body.owner, repo: body.repo }), undefined, "named");
     } catch {
       if (!ticket.isCurrent()) return;
       setError("Could not reach GitGhost. Check your connection and try again.");
@@ -59,40 +58,32 @@ export function SummonForm() {
     }
   }
 
+  // The game's command line: speak a repository's name to summon its ghost. Hotkey N (see GraveyardGame).
   return (
-    <RPGPanel as="div" tone="teal" className="mx-auto mt-8 max-w-2xl p-4 text-left sm:p-5">
-      <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="summon-input" className="rpg-title block">
-          Summon your own
-        </label>
-        <p id="summon-hint" className="mt-2 text-base text-bone/90">
-          Enter a public repository, like <code className="text-gold">owner/repo</code> or{" "}
-          <code className="text-gold">github.com/owner/repo</code>.
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
-          <input
-            id="summon-input"
-            name="repository"
-            type="text"
-            inputMode="url"
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "summon-hint summon-error" : "summon-hint"}
-            placeholder="mozilla/pdf.js"
-            className="rpg-input min-h-11 flex-1"
-          />
-          <button type="submit" disabled={status === "checking"} className="rpg-btn rpg-btn-primary">
-            {status === "checking" ? "Summoning…" : "Summon"}
-          </button>
-        </div>
-        <p id="summon-error" role="alert" className="mt-2 min-h-6 text-base text-crimson">
-          {error}
-        </p>
-      </form>
-    </RPGPanel>
+    <form onSubmit={onSubmit} noValidate className="game-summon" aria-label="Summon by name">
+      <label htmlFor="summon-input" className="game-summon-label">Speak a name</label>
+      <div className="game-summon-row">
+        <input
+          id="summon-input"
+          name="repository"
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "summon-hint summon-error" : "summon-hint"}
+          placeholder="owner/repo"
+          className="game-summon-input"
+        />
+        <button type="submit" disabled={status === "checking"} className="game-summon-btn">
+          {status === "checking" ? "Summoning…" : "Summon"}
+        </button>
+      </div>
+      <p id="summon-hint" className="sr-only">A public GitHub repository, like owner/repo or github.com/owner/repo.</p>
+      <p id="summon-error" role="alert" className="game-summon-error">{error}</p>
+    </form>
   );
 }

@@ -15,6 +15,10 @@ GITGHOST_LIVE=1 npm test   # also runs the live GitHub smoke test
 
 Optional: set `GITHUB_TOKEN` in `.env.local` (git-ignored) for a higher GitHub rate limit. It is only read on the server. Without it, unauthenticated limits apply (60 requests/hour).
 
+## Work done outside Kiro
+
+Some features were built with another AI coding assistant alongside Kiro. `KIRO_LOG.md` lists only work done with Kiro; [DISCLOSURES.md](DISCLOSURES.md) lists the rest. Why the project rules changed: `.kiro/steering/decisions.md`.
+
 ## License
 
 Open-source license file still to be added (see `BUILD.md`).

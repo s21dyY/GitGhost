@@ -698,3 +698,278 @@
   .v4-bleed-drop { display: none; }
   .v4-eye { transform: scaleY(1); opacity: 0.6; }
 }
+
+/* ================= V7: immersion pass — the scene is the screen, the UI is a game window ================= */
+/* Palette: warm void black, worn bone, candle gold, blood red. Teal is gone; a sick green is kept only for small accents.
+   Every text colour holds 4.5:1 or better on --win. */
+.v4 {
+  --void: #050304; --win: #090607; --win-2: #120b0c; --rim: #2c1f1b; --frame: #a69d8b;
+  --blood: #8e0f1f; --blood-text: #ff5866;
+  --bone: #e2d8c3; --bone-dim: #a99f8b; --gold: #d0a95f; --teal: #93a97c;
+  --crimson: #7a1622; --crimson-text: #ff8a93; --purple-text: #bba9cc;
+  background: var(--void);
+}
+.v4 * { scrollbar-color: #3a2a24 transparent; }
+
+/* --- desktop: the stage runs under both panels; the panels and the dialogue float over it --- */
+@media (min-width: 1024px) {
+  .v4 { --lw: clamp(236px, 18vw, 276px); --rw: clamp(256px, 21vw, 316px); grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw); }
+  .v4-center { grid-column: 1 / -1; grid-row: 2; }
+  .v4 .v4-left, .v4 .v4-right { z-index: 6; margin: 14px 14px 14px; }
+  .v4 .v4-dlg { left: var(--lw); right: var(--rw); bottom: 14px; }
+  /* the edges of the room sink into the dark behind the windows */
+  .v4-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: linear-gradient(90deg, rgba(5, 3, 4, 0.85), transparent 22%, transparent 78%, rgba(5, 3, 4, 0.85)); }
+}
+
+/* --- one window language: black glass, a worn bone line, a blood hairline inside, a hard drop shadow --- */
+.v4 .v4-left, .v4 .v4-right, .v4 .v4-era {
+  background-color: rgba(9, 6, 7, 0.9);
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(120, 20, 30, 0.08), transparent 60%), radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.7), transparent 60%);
+  box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--frame), inset 0 0 0 4px #000, inset 0 0 0 5px rgba(142, 15, 31, 0.6), 6px 6px 0 0 rgba(0, 0, 0, 0.55);
+}
+.v4 .v4-left, .v4 .v4-right { padding: 16px 16px 14px; }
+@media (max-width: 1023px) { .v4 .v4-left, .v4 .v4-right { background-color: #090607; } }
+/* the corner studs become dried blood */
+.v4-left::before, .v4-right::before, .v4-dlg-box::before {
+  --st: var(--blood-text);
+  background:
+    linear-gradient(var(--st), var(--st)) 0 0 / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 0 0 / 2px 6px no-repeat,
+    linear-gradient(var(--st), var(--st)) 100% 0 / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 100% 0 / 2px 6px no-repeat,
+    linear-gradient(var(--st), var(--st)) 0 100% / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 0 100% / 2px 6px no-repeat,
+    linear-gradient(var(--st), var(--st)) 100% 100% / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 100% 100% / 2px 6px no-repeat;
+  inset: 6px; opacity: 0.5;
+}
+.v4 .v4-side-head { border-bottom: 0; padding-bottom: 10px; }
+.v4 .v4-side-head::after { height: 2px; bottom: 0; opacity: 1; background: linear-gradient(90deg, var(--blood), rgba(142, 15, 31, 0.15)); }
+.v4 .v4-side-head .rpg-title { color: var(--bone); text-shadow: 2px 2px 0 #3a060d; letter-spacing: 0.1em; }
+
+/* --- top bar: a thin black strip with a blood seam --- */
+.v4 .v4-top { background: #030202; border-bottom: 2px solid #1a0f0e; box-shadow: 0 2px 0 0 rgba(142, 15, 31, 0.45); }
+.v4 .v4-title { color: var(--bone); text-shadow: 2px 2px 0 #3a060d; letter-spacing: 0.06em; }
+.v4 .v4-banner { color: var(--bone-dim); }
+.v4-phone-only { display: inline-block; }
+@media (min-width: 640px) { .v4-phone-only { display: none !important; } }
+
+/* --- buttons: bone lines on black; the one that acts is blood --- */
+.v4 .rpg-btn { --bc: #4a3a32; background-color: #0a0607; background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.4)); color: var(--bone); }
+.v4 .rpg-btn:hover:not(:disabled) { --bc: var(--frame); background-color: #160c0d; color: #fff; }
+.v4 .rpg-btn-primary { --bc: var(--blood); background-color: #1c0609; color: #f4ddd6; }
+.v4 .rpg-btn-primary:hover:not(:disabled) { --bc: var(--blood-text); background-color: #2c080d; }
+.v4 .rpg-tag.tag-reading { color: var(--bone-dim); }
+
+/* --- the stage chip: a small black plaque --- */
+.v4 .v4-era { top: 14px; padding: 6px 14px; gap: 8px; font-family: var(--font-label), monospace; font-size: 13px; letter-spacing: 0.04em; }
+.v4 .v4-era .v4-sha { color: var(--gold); font-size: 13px; }
+.v4 .v4-era[data-past] { box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--blood-text), inset 0 0 0 4px #000, 6px 6px 0 0 rgba(0, 0, 0, 0.55); }
+@media (max-width: 639px) { .v4 .v4-era { white-space: nowrap; flex-wrap: nowrap; font-size: 12px; padding: 5px 10px; } }
+
+/* --- Haunted Archive: an entry in a bestiary --- */
+.v4 .v4-h { color: var(--bone-dim); letter-spacing: 0.14em; }
+.v4 .v4-big { color: var(--bone); font-size: 19px; text-shadow: 2px 2px 0 #000; }
+.v4 .v4-place { color: var(--teal); letter-spacing: 0.1em; }
+.v4 .v4-dl { gap: 0; grid-template-columns: auto 1fr; font-size: 14px; }
+.v4 .v4-dl dt, .v4 .v4-dl dd { padding: 7px 0; border-bottom: 1px dashed #2c1f1b; margin: 0; }
+.v4 .v4-dl dt { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; padding-right: 12px; color: var(--bone-dim); }
+.v4 .v4-link { color: var(--gold); }
+
+/* the dread mark: five pips, a word. It follows the ghost's form only. */
+.v4-dread { display: grid; grid-template-columns: auto 1fr; align-items: center; row-gap: 6px; margin: 4px 0 10px; padding: 8px 10px; background: #050304; box-shadow: inset 0 0 0 1px #2c1f1b; }
+.v4-dread-label { font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--bone-dim); }
+.v4-dread-pips { grid-column: 1 / -1; grid-row: 2; display: flex; gap: 3px; }
+.v4-dread-pips span { flex: 1; height: 10px; background: #1c1312; box-shadow: inset 0 0 0 1px #3a2a24; }
+.v4-dread-pips span[data-lit] { background: linear-gradient(#ff5866, #8e0f1f); box-shadow: inset 0 0 0 1px #2a0306; }
+.v4-dread-word { justify-self: end; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blood-text); }
+.v4-dread[data-form="human"] .v4-dread-word { color: var(--bone-dim); }
+.v4-dread[data-form="horror"] .v4-dread-pips span[data-lit] { animation: v4-dread 2.6s steps(1) infinite; }
+.v4-dread[data-form="horror"] .v4-dread-pips span[data-lit]:nth-child(2n) { animation-delay: 0.3s; }
+@keyframes v4-dread { 0%, 70%, 100% { opacity: 1; } 72% { opacity: 0.3; } 74% { opacity: 1; } 76% { opacity: 0.5; } }
+
+/* --- Memory Journal: an epitaph, then a row of graves --- */
+.v4 .v4-journal-top { border-bottom: 0; }
+.v4 .v4-life { text-align: center; justify-items: center; padding: 10px; background: none;
+  box-shadow: inset 0 2px 0 0 var(--rim), inset 0 4px 0 0 #000, inset 0 5px 0 0 var(--rim), inset 0 -2px 0 0 var(--rim), inset 0 -4px 0 0 #000, inset 0 -5px 0 0 var(--rim); }
+.v4 .v4-life-row { justify-content: center; font-size: 13px; }
+.v4 .v4-life .v4-date { color: var(--bone); font-family: var(--font-label), monospace; }
+.v4 .v4-context { background: #050304; box-shadow: inset 0 0 0 1px var(--rim), inset 3px 0 0 0 var(--blood); }
+.v4 .v4-past { background: #1a0609; box-shadow: inset 0 0 0 2px var(--blood); }
+.v4 .v4-return { background: #1c0609; box-shadow: inset 0 0 0 2px var(--blood-text); }
+.v4 .v4-return:hover { background: #2c080d; }
+
+.v4 .v4-timeline > li::before { background: repeating-linear-gradient(var(--rim) 0 6px, transparent 6px 10px); }
+/* a small grave cross on the rail instead of a dot */
+.v4 .v4-timeline .v4-memory .v4-node-dot {
+  width: 10px; height: 14px; left: -18px; top: 12px; box-shadow: none; color: #5a4a40; background-color: transparent;
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-size: 2px 100%, 100% 2px, 6px 2px; background-position: 50% 0, 0 30%, 50% 100%; background-repeat: no-repeat;
+}
+.v4 .v4-timeline .v4-memory[data-present] .v4-node-dot { color: var(--gold); background-color: transparent; }
+.v4 .v4-timeline .v4-memory[data-selected] .v4-node-dot { color: var(--blood-text); background-color: transparent; filter: drop-shadow(0 0 4px rgba(255, 88, 102, 0.6)); }
+.v4 .v4-timeline .v4-memory:hover { background: rgba(60, 30, 26, 0.35); }
+.v4 .v4-timeline .v4-memory[data-selected] { background: linear-gradient(90deg, rgba(120, 12, 26, 0.38), rgba(120, 12, 26, 0.06)); box-shadow: inset 2px 0 0 0 var(--blood-text); }
+/* the RPG cursor: every date keeps room for it, the chosen memory shows it */
+.v4 .v4-memory .v4-date::before { content: "▶"; display: inline-block; width: 1.4em; color: transparent; }
+.v4 .v4-memory:hover .v4-date::before, .v4 .v4-memory:focus-visible .v4-date::before { color: var(--bone-dim); }
+.v4 .v4-memory[data-selected] .v4-date::before { color: var(--blood-text); animation: v4-blink 1s steps(1) infinite; }
+.v4 .v4-memory .v4-msg { padding-left: 1.4em; }
+.v4 .v4-memory .v4-memory-tags { padding-left: 1.65em; }
+.v4 .v4-memory .v4-sha { color: var(--gold); }
+.v4 .v4-memory:focus-visible { outline-color: var(--blood-text); }
+
+/* --- dialogue: same window as the panels --- */
+.v4 .v4-dlg .v4-dlg-box, .v4 .v4-dlg .v4-dlg-tab { border-color: var(--frame); }
+.v4 .v4-dlg .v4-dlg-box { box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #000, inset 0 0 0 3px rgba(142, 15, 31, 0.6), inset 0 0 40px rgba(0, 0, 0, 0.9), 6px 6px 0 0 rgba(0, 0, 0, 0.55); }
+.v4 .v4-portrait { background: #050304; box-shadow: 0 0 0 2px var(--frame), 0 0 0 4px #000, 0 0 0 5px rgba(142, 15, 31, 0.6); }
+.v4 .v4-dlg[data-talking] .v4-portrait { box-shadow: 0 0 0 2px var(--blood-text), 0 0 0 4px #000, 0 0 12px 4px rgba(142, 15, 31, 0.45); }
+.v4 .v4-askrow .rpg-input { border-color: #4a3a32; }
+.v4 .v4-askrow::before { color: var(--blood-text); animation: v4-blink 1.1s steps(1) infinite; }
+.v4 .v4-askrow .rpg-input:focus-visible { outline-color: var(--blood-text); }
+.v4 .v4-skip { color: var(--bone-dim); box-shadow: inset 0 0 0 1px #4a3a32; }
+
+/* --- the room breathes: a slow pulse of red at the edges once the ghost has changed --- */
+.v4[data-form="distorted"] .v4-tone, .v4[data-form="horror"] .v4-tone { animation: v4-breathe 7s ease-in-out infinite; }
+@keyframes v4-breathe { 0%, 100% { box-shadow: inset 0 0 120px 20px rgba(90, 0, 12, 0.15); } 50% { box-shadow: inset 0 0 160px 50px rgba(110, 0, 16, 0.32); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .v4-dread-pips span, .v4 .v4-memory .v4-date::before, .v4 .v4-askrow::before, .v4 .v4-tone { animation: none !important; }
+}
+
+/* ================= V8: the first encounter — beats with a ▼, then a ▶ choice menu ================= */
+.v4-beat + .v4-beat { margin-top: 6px; }
+.v4-beat-next {
+  display: block; margin: 2px 0 0 auto; min-width: 44px; min-height: 32px; padding: 0 10px; background: none; border: 0; cursor: pointer;
+  font-size: 14px; line-height: 1; color: var(--blood-text); animation: v4-next 1.1s steps(2) infinite;
+}
+.v4-beat-next:hover, .v4-beat-next:focus-visible { color: var(--bone); }
+.v4-beat-next:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+
+.v4-menu { list-style: none; margin: 0; padding: 6px 0 0; display: grid; grid-template-columns: 1fr; gap: 2px; border-top: 1px solid #2a1d1a; }
+@media (min-width: 640px) { .v4-menu { grid-template-columns: 1fr 1fr; column-gap: 12px; } }
+.v4-menu-item {
+  position: relative; width: 100%; min-height: 36px; padding: 4px 8px 4px 24px; text-align: left; cursor: pointer; background: none; border: 0;
+  font-family: var(--font-label), monospace; font-size: 13px; line-height: 1.3; letter-spacing: 0.02em; color: var(--bone-dim);
+}
+.v4-menu-item::before { content: "▶"; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 11px; color: transparent; }
+.v4-menu-item:hover, .v4-menu-item:focus-visible { color: var(--bone); background: linear-gradient(90deg, rgba(120, 12, 26, 0.32), transparent); outline: none; }
+.v4-menu-item:hover::before, .v4-menu-item:focus-visible::before { color: var(--blood-text); animation: v4-blink 1s steps(1) infinite; }
+.v4-menu-item:focus-visible { box-shadow: inset 2px 0 0 0 var(--blood-text); }
+.v4-menu-item[data-choice="other"] { color: #7d7466; font-style: normal; }
+@media (max-width: 1023px) { .v4-menu-item { min-height: 44px; } }
+/* phones: the box for typing is right below, so "Say something else" is not repeated */
+@media (max-width: 639px) { .v4-menu li:has([data-choice="other"]) { display: none; } .v4-menu-item { font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .v4-beat-next, .v4-menu-item::before { animation: none !important; } }
+/* phones: the dialogue is a grid (portrait | conversation, then the input); the menu gets a full-width row between them */
+@media (max-width: 639px) {
+  .v4-dlg-box:has(.v4-menu) { grid-template-rows: minmax(3.5rem, 1fr) auto auto; }
+  .v4-menu { grid-column: 1 / -1; grid-row: 2; }
+  .v4-dlg-box:has(.v4-menu) .v4-form { grid-row: 3; }
+}
+.v4-log[data-opening] { cursor: pointer; }
+
+/* ================= V8.1: a slimmer question row, so the dialogue shows more text ================= */
+.v4 .v4-form { gap: 2px; }
+.v4 .v4-askrow { gap: 6px; flex-wrap: nowrap; }
+.v4 .v4-askrow .rpg-input { min-height: 32px; height: 32px; padding: 0 10px 0 26px; font-size: 13px; }
+.v4 .v4-askrow::before { left: 10px; font-size: 10px; }
+.v4 .v4-askrow .rpg-btn { min-height: 32px !important; height: 32px; min-width: 0; margin: 2px; padding: 0 12px !important; font-size: 11px !important; }
+/* phones keep a comfortable touch height */
+@media (max-width: 1023px) {
+  .v4 .v4-askrow .rpg-input { min-height: 40px; height: 40px; }
+  .v4 .v4-askrow .rpg-btn { min-height: 40px !important; height: 40px; }
+}
+
+/* ================= V10: Possession — the ghost's code over the scene ================= */
+.v4-stage[data-possessed] .v4-world { opacity: 0.16; filter: saturate(0.4); transition: opacity 0.4s steps(4); }
+.v4-stage[data-possessed] .v4-eyes, .v4-stage[data-possessed] .v4-era { opacity: 0.35; }
+.v4-possess {
+  position: absolute; z-index: 4; left: 8px; right: 8px; top: 8px; bottom: 8px; display: flex; flex-direction: column; min-height: 0;
+  background: rgba(5, 3, 4, 0.94);
+  box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--frame), inset 0 0 0 4px #000, inset 0 0 0 5px rgba(142, 15, 31, 0.6), 0 0 60px rgba(90, 0, 12, 0.35);
+  animation: v4-possess-in 0.5s steps(5) both;
+}
+@media (min-width: 1024px) { .v4-possess { left: calc(var(--lw) + 4px); right: calc(var(--rw) + 4px); top: 60px; bottom: calc(var(--dlg-h) + 34px); } }
+@keyframes v4-possess-in { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+.v4-possess-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; border-bottom: 1px solid #2a1d1a; min-width: 0; }
+.v4-possess-title { margin: 0; font-family: var(--font-pixel), monospace; font-size: 12px; color: var(--bone); text-shadow: 2px 2px 0 #3a060d; white-space: nowrap; }
+.v4-possess-back, .v4-possess-leave { flex: none; min-height: 32px; padding: 0 8px; background: none; border: 0; cursor: pointer; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bone-dim); }
+.v4-possess-back:hover, .v4-possess-leave:hover, .v4-possess-back:focus-visible, .v4-possess-leave:focus-visible { color: var(--bone); }
+.v4-possess-leave { margin-left: auto; font-size: 14px; }
+.v4-possess-path { flex: 1; min-width: 0; margin: 0; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.04em; color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.v4-possess-gh { flex: none; font-size: 12px; }
+@media (max-width: 1023px) { .v4-possess-back, .v4-possess-leave { min-height: 44px; } }
+
+/* its body: search and the file list */
+.v4-possess-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 10px 12px; gap: 6px; }
+.v4-possess-search .rpg-input { width: 100%; height: 32px; min-height: 32px; font-family: var(--font-label), monospace; font-size: 13px; background: #000; color: var(--bone); box-shadow: inset 0 0 0 1px #4a3a32; }
+.v4-possess-search .rpg-input:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+.v4-possess-count { margin: 0; font-size: 12px; color: var(--bone-dim); font-family: var(--font-label), monospace; }
+.v4-possess-files { list-style: none; margin: 0; padding: 0 4px 0 0; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 1px; }
+.v4-possess-files button { width: 100%; min-height: 30px; padding: 4px 8px 4px 22px; position: relative; text-align: left; background: none; border: 0; cursor: pointer; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.3; color: var(--bone); overflow-wrap: anywhere; }
+.v4-possess-files button::before { content: "▶"; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 10px; color: transparent; }
+.v4-possess-files button:hover, .v4-possess-files button:focus-visible { background: linear-gradient(90deg, rgba(120, 12, 26, 0.32), transparent); outline: none; }
+.v4-possess-files button:hover::before, .v4-possess-files button:focus-visible::before { color: var(--blood-text); }
+.v4-possess-dir { color: #8a7f6c; }
+@media (max-width: 1023px) { .v4-possess-files button { min-height: 40px; } }
+
+/* one file: numbered lines; chosen lines are lit in blood */
+.v4-possess-file { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.v4-possess-msg { padding: 12px; }
+.v4-code { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 6px 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.55; color: #d9cfbb; background: #030202; }
+.v4-code-line { display: flex; min-width: max-content; cursor: pointer; }
+.v4-code-line:hover { background: rgba(60, 30, 26, 0.45); }
+.v4-code-line[aria-selected="true"] { background: rgba(120, 12, 26, 0.42); box-shadow: inset 3px 0 0 0 var(--blood-text); }
+.v4-code-line:focus-visible { outline: 1px solid var(--blood-text); outline-offset: -1px; }
+.v4-code-n { flex: none; width: 4.5em; padding-right: 12px; text-align: right; color: #5f564b; user-select: none; }
+.v4-code-line[aria-selected="true"] .v4-code-n { color: var(--blood-text); }
+.v4-code-t { white-space: pre; padding-right: 16px; }
+.v4-possess-foot { flex: none; margin: 0; padding: 6px 12px 8px; border-top: 1px solid #2a1d1a; font-family: var(--font-label), monospace; font-size: 12px; color: var(--bone-dim); }
+.v4-body-btn { width: calc(100% - 8px); margin-top: 10px !important; justify-content: center; font-size: 12px !important; }
+@media (prefers-reduced-motion: reduce) { .v4-possess { animation: none; } .v4-stage[data-possessed] .v4-world { transition: none; } }
+/* phones: while its code is open, the dialogue gives the code more of the screen */
+@media (max-width: 1023px) { .v4:has(.v4-stage[data-possessed]) .v4-dlg { max-height: 40dvh; } }
+/* focusing a code line must never scroll the scene itself: clip, unlike hidden, is not a scroll container */
+.v4-stage { overflow: clip; }
+
+/* ================= V11: the code map beside the file ================= */
+.v4-possess-file { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+.v4-map-toggle { display: none; }
+.v4-map { grid-column: 1; grid-row: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 6px 4px 6px 8px; border-right: 1px solid #2a1d1a; background: #050304; }
+.v4-possess-file .v4-code { grid-column: 2; grid-row: 1; }
+.v4-possess-file .v4-possess-foot { grid-column: 1 / -1; grid-row: 2; }
+.v4-possess-file[data-map="false"] { grid-template-columns: minmax(0, 1fr); }
+.v4-possess-file[data-map="false"] .v4-map { display: none; }
+.v4-possess-file[data-map="false"] .v4-code { grid-column: 1; }
+.v4-map-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.v4-map-list button { width: 100%; min-height: 26px; display: flex; align-items: baseline; gap: 6px; padding: 2px 6px; text-align: left; background: none; border: 0; cursor: pointer; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; line-height: 1.35; color: var(--bone-dim); }
+.v4-map-list button:hover, .v4-map-list button:focus-visible { color: var(--bone); background: rgba(60, 30, 26, 0.45); outline: none; }
+.v4-map-list button:focus-visible { box-shadow: inset 2px 0 0 0 var(--blood-text); }
+.v4-map-list button[aria-pressed="true"] { color: var(--bone); background: rgba(120, 12, 26, 0.42); box-shadow: inset 2px 0 0 0 var(--blood-text); }
+.v4-map-glyph { flex: none; width: 1em; text-align: center; color: var(--gold); }
+.v4-map-name { overflow-wrap: anywhere; }
+.v4-map-note, .v4-map-empty { margin: 2px 4px 6px; font-family: var(--font-label), monospace; font-size: 11px; line-height: 1.4; color: #8a7f6c; }
+/* phones and tablets: the map folds away behind a toggle and opens over the code */
+@media (max-width: 1023px) {
+  .v4-possess-file { grid-template-columns: minmax(0, 1fr); }
+  .v4-possess-file .v4-code { grid-column: 1; }
+  .v4-map-toggle { display: block; position: absolute; right: 52px; top: 10px; z-index: 2; min-height: 44px; padding: 0 10px; background: none; border: 0; cursor: pointer; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .v4-map { display: none; grid-column: 1; grid-row: 1; z-index: 1; border-right: 0; border-bottom: 1px solid #2a1d1a; }
+  .v4-possess-file[data-map="true"] .v4-map { display: block; }
+  .v4-map-list button { min-height: 40px; }
+}
+
+/* ================= V12: a living repository's ghost ================= */
+/* Still committed to: no dread, a living colour, and a warmer arrival card. */
+.v4-dread[data-alive] .v4-dread-word { color: var(--teal); }
+.v4-arrive-card[data-alive] span { color: #e4c18b; }
+.v4-arrive-card[data-alive] b { text-shadow: 3px 3px 0 #000, 0 0 18px rgba(228, 193, 139, 0.45); }
+
+/* ================= V14: the Specialist and its Code Record ================= */
+/* lines the Specialist commented on: a gold mark in the gutter */
+.v4-code-line[data-marked] .v4-code-n { color: var(--gold); box-shadow: inset -2px 0 0 0 var(--gold); }
+.v4-record { display: grid; gap: 4px; }
+.v4-record-meta { margin: 0 0 6px; font-size: 13px; line-height: 1.5; color: var(--bone-dim); }
+.v4-record-summary { margin: 0; font-size: 16px; line-height: 1.5; color: var(--bone); }
+.v4-record-obs { margin: 4px 0 0; padding-left: 20px; display: grid; gap: 10px; }
+.v4-record-obs p { margin: 0 0 2px; font-size: 15px; line-height: 1.45; }
+.v4-record-unsure { margin: 4px 0 0; padding-left: 18px; font-size: 14px; color: var(--bone-dim); font-style: italic; }
+.v4-record-next { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }

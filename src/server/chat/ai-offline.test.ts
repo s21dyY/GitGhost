@@ -228,14 +228,23 @@ describe("real model path, offline: a lying or hijacked model", () => {
     expect(sys).toContain("[removed]");
   });
 
-  it("a model that returns prose, wrong JSON, or nothing is never displayed, but the call is still billed", async () => {
+  it("a model that returns prose, wrong JSON, or nothing is never displayed; it is asked once more, and both calls are billed", async () => {
     await saveIdentity();
     for (const text of ["Sure! Here is the story of the project.", '{"answer":"hello"}', "", '{"segments":[]}', "```json\n{\"segments\": [oops]}\n```"]) {
       const r = rig(() => ({ text }));
       const res = await r.ask();
       expect(res).toMatchObject({ ok: false, status: 502, code: "unverifiable_answer" });
-      expect(spent(r)).toBe(costMicros({ inputTokens: 1200, outputTokens: 120 }, config())); // inference happened; never refunded
+      // inference happened twice (the reply, then one retry), never refunded, and never a third time
+      expect(spent(r)).toBe(2 * costMicros({ inputTokens: 1200, outputTokens: 120 }, config()));
     }
+  });
+  it("an unreadable first reply followed by a good one is shown, and only the good one", async () => {
+    await saveIdentity();
+    let n = 0;
+    const r = rig(() => ({ text: n++ === 0 ? '{"segments":[],"ghost":["hidden"]}' : '{"segments":[{"kind":"ghost","text":"Ask, and I will remember."}]}' }));
+    const res = await r.ask();
+    expect(res.ok).toBe(true);
+    expect(JSON.stringify(res)).not.toContain("hidden");
   });
 
   it("missing usage in the reply keeps the full reservation", async () => {

@@ -1,7 +1,7 @@
 import { buildEvidence, type EvidenceItem } from "@/domain/evidence";
 import { githubBlame, type GitHubDeps } from "@/server/github/client";
 import { cleanUntrustedText } from "@/server/github/summon";
-import { fetchCommitPulls, fetchFileCommits, fetchFileExcerpt, type FetchCtx } from "./github-evidence";
+import { fetchCommitPulls, fetchFileCommits, fetchFileReading, type FetchCtx } from "./github-evidence";
 import type { FileRef } from "./intent";
 import type { Gap } from "./retrieve";
 
@@ -26,17 +26,20 @@ export async function fileEvidence(ctx: FetchCtx, file: FileRef, at: string, gap
       return fallback;
     }
   };
-  const [history, excerpt, blame] = await Promise.all([
+  const [history, reading, blame] = await Promise.all([
     run(`history of ${file.path}`, { newest: [] as EvidenceItem[], earliest: [] as EvidenceItem[] }, () => fetchFileCommits(ctx, file.path, at)),
-    run(`code of ${file.path}`, null as EvidenceItem | null, () => fetchFileExcerpt(ctx, file.path, at, file.line, file.endLine)),
+    run(`code of ${file.path}`, [] as EvidenceItem[], () => fetchFileReading(ctx, file.path, at, { line: file.line, endLine: file.endLine }, file.whole === true)),
     file.line ? run(`line history of ${file.path}`, null, () => githubBlame({ owner: ctx.repo.owner, name: ctx.repo.name, at, path: file.path }, deps)) : Promise.resolve(null),
   ]);
-  if (!history.newest.length && !excerpt) {
+  if (!history.newest.length && !reading.length) {
     if (!gaps.some((g) => g.source.endsWith(file.path))) gaps.push({ source: `history of ${file.path}`, code: "not_found", message: `No commit in this history touches ${file.path}.` });
     return [];
   }
-  const items: EvidenceItem[] = [];
-  if (excerpt) items.push(excerpt);
+  // Order is what survives a tight budget: the code asked about, the commit that last changed it, the rest of the file
+  // (for "what does this do"), then the file's history and the pull request behind it.
+  const focus = reading.filter((r) => !/\((context|skeleton)\)$/.test(r.label ?? ""));
+  const context = reading.filter((r) => /\((context|skeleton)\)$/.test(r.label ?? ""));
+  const items: EvidenceItem[] = [...focus];
   // the commit that last changed the named line, from blame
   let key: string | undefined;
   const range = file.line && blame ? blame.find((r) => r.start <= file.line! && file.line! <= r.end) : undefined;
@@ -57,7 +60,7 @@ export async function fileEvidence(ctx: FetchCtx, file: FileRef, at: string, gap
   } else if (file.line && blame === null && !(deps.token ?? process.env.GITHUB_TOKEN)) {
     gaps.push({ source: `line history of ${file.path}`, code: "unavailable", message: "Line-by-line history needs a GitHub token on the server." });
   }
-  items.push(...history.newest.slice(0, 5), ...history.earliest);
+  items.push(...context, ...history.newest.slice(0, 5), ...history.earliest);
   // the pull request behind the most telling commit: the one that changed the line, else the newest one
   key ??= history.newest[0]?.revisionSha;
   if (key) items.push(...(await run(`pull request behind ${key.slice(0, 7)}`, [] as EvidenceItem[], () => fetchCommitPulls(ctx, key!, 1))));

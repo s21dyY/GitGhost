@@ -1,20 +1,22 @@
 # GitGhost — Fresh Build Plan (Kiroween 2026)
 
+> **Amended 2026-11-02:** where this plan differs from `.kiro/steering/decisions.md` (D1 to D5), the decision log wins. Quests and the revival brief are deferred; the first encounter, legacy-code explanation (Possession) and the Bellwraith are in scope.
+
 **Status:** Design-approved concept; no working app, deployment, database, finished art, agent setup, or integration is presumed. **Start:** October 30, 2026. **Submission deadline:** December 4, 2026, 2 PM Pacific. **Primary entry:** Costume Contest. **Goal:** A complete public GitGhost experience with a high-quality under-three-minute demo.
 
 This is the project's single starting design brief. It incorporates ideas from the earlier planning document, but is deliberately written as a **new-build plan**, not a changelog, migration, or iteration on implemented work. Files under `.kiro/` are starter instructions—not evidence that Kiro has already executed them.
 
 ## 1. Product
 
-**Pitch:** *Every repo has a ghost. Ask it what happened, then finish its unfinished business.*
+**Pitch:** *Every repo has a ghost. Ask it what happened, then finish its unfinished business.* (The "unfinished business" quest half is deferred, D2.)
 
-GitGhost turns public GitHub repositories into distinctive, fictional retro-horror characters whose real repository history is discoverable via source-linked dialogue and a bounded time machine. The user may either discover a ghost in a cemetery of public projects or summon a specific repository by URL. The experience culminates in an optional, source-grounded **Revival Quest** with an exportable developer brief.
+GitGhost turns public GitHub repositories into distinctive, fictional retro-horror characters whose real repository history is discoverable via source-linked dialogue and a bounded time machine. The user may either discover a ghost in a cemetery of public projects or summon a specific repository by URL. The experience culminates in an optional, source-grounded **Revival Quest** with an exportable developer brief. **Deferred (2026-11-02, decision D2 in `.kiro/steering/decisions.md`).** The Revival Quest and brief are out of scope; if they return, a human designer writes the quest content and AI never generates quest steps, rewards or progress.
 
 **Audience:** Developers exploring an unfamiliar, quiet, old, or archived repository; curious visitors discovering unusual open-source history; prospective contributors seeking a realistic first step. Do not promise automatic repairs or merged PRs.
 
-**Core user loop:** Graveyard discovery or URL → choose tombstone → summon → ghost conversation with verified evidence → inspect a memory and optional human-origin reveal → diagnose Signs of Life → receive a bounded contribution quest → export brief.
+**Core user loop:** Graveyard discovery or URL → choose tombstone → summon → ghost conversation with verified evidence → inspect a memory and optional human-origin reveal → diagnose Signs of Life → receive a bounded contribution quest → export brief. (Quest and brief steps deferred, D2.)
 
-**Design thesis:** Horror as an information interface. Tombstones = real repositories, fractures = missing evidence, memories = historical snapshots, spirit identity = stable fiction, ritual/quest = practical contributor onboarding. The ghost is a personification, never the actual developer.
+**Design thesis:** Horror as an information interface. Tombstones = real repositories, fractures = missing evidence, memories = historical snapshots, spirit identity = stable fiction, ritual/quest = practical contributor onboarding (deferred, D2). The ghost is a personification, never the actual developer.
 
 ## 2. Contest conditions and eligibility
 
@@ -30,8 +32,8 @@ GitGhost turns public GitHub repositories into distinctive, fictional retro-horr
 
 | Tier | Features | Acceptance gate |
 |---|---|---|
-| Vertical slice | Static curated graveyard with 6 real linked repos, URL input, one Archivist sprite in 3 stages, metadata, source-backed chat, 1 bounded quest and export | A stranger selects a grave, converses and exports a valid brief |
-| Main release | Rotating discovery with safe cached search, 4 human origin archetypes, 6 horror voice styles, 3-stage sprites, Signs of Life, 3 demo fixtures, 10-release time travel, local quest persistence | One real repo completes every enabled flow and all citation/revision checks pass |
+| Vertical slice | Static curated graveyard with 6 real linked repos, URL input, one Archivist sprite in 3 stages, metadata, source-backed chat, 1 bounded quest and export (quest/export deferred, D2) | A stranger selects a grave, converses and exports a valid brief (brief part deferred, D2) |
+| Main release | Rotating discovery with safe cached search, 4 human origin archetypes, 6 horror voice styles, 3-stage sprites, Signs of Life, 3 demo fixtures, 10-release time travel, local quest persistence (deferred, D2) | One real repo completes every enabled flow and all citation/revision checks pass |
 | Stretch | GitHub OAuth verified personal ownership, extra summon animations, one Kiro Revival Guide custom skill, more elaborate weather, refined accessibility | Add only after video-ready core and integration tests |
 
 **Not in scope:** private repo support, arbitrary repo code execution on server, automatic push/PR/fork, unsupervised repair, multiplayer, custom AI images at runtime, full repository semantic index, large roster of hand-drawn characters, in-app voice.
@@ -71,6 +73,8 @@ Responsive layout: (left) animated entity with purpose, stable name and fictiona
 **Recognition:** Anonymous default; self-identification (`It's mine`, `I contributed`, `I'm exploring`) is **self-reported only**, shown as such, session scoped, reversible. Optional future verified personal owner only via real server-side GitHub OAuth ID comparison; current ownership ≠ original authorship. No inferred blame.
 
 ### 4C. `Unfinished Business` panel / brief route
+
+> **Deferred (2026-11-02, decision D2 in `.kiro/steering/decisions.md`).** Out of the current scope. If a quest returns, its content is designed and written by the human designer; AI never generates quest steps, rewards or progress. The original text below is kept for reference.
 
 Generate up to 3 realistic quests based on current default-branch SHA and retrieved issues/docs; offer optional skill, contribution type, and time budget. Each quest contains concrete goal, retrieved evidence, verified paths, first step, effort estimate clearly qualified, validation suggestions, acceptance criteria and unknowns. Quest can be an *investigation* if evidence is not sufficient for a fix. Archived repos get a personal learning/fork route, with license caution. No write operations.
 
@@ -118,8 +122,8 @@ Endpoints (all runtime-validated, non-streaming generation initially):
 | `POST /api/summon` | Validated owner/repo; canonical ID, assignment, metadata |
 | `POST /api/chat` | Server-owned session, repo ID, revision, question, valid answer + citations |
 | `GET /api/memory?repoId=&sha=` | Verified release-at-SHA historical files |
-| `POST /api/quests` | Current revision evidence → up to 3 validated quests |
-| `POST /api/brief` | Verified quest → safe downloadable/copyable brief |
+| `POST /api/quests` | **Deferred (D2).** Current revision evidence → up to 3 validated quests |
+| `POST /api/brief` | **Deferred (D2).** Verified quest → safe downloadable/copyable brief |
 
 ```ts
 type EntityAssignment = {
@@ -147,13 +151,13 @@ Session-specific conversations and self-claims never enter globally shared entit
 
 ```text
 src/app/page.tsx                     # Graveyard + URL entry
-src/app/repo/[owner]/[repo]/page.tsx # Séance, memory, quest
+src/app/repo/[owner]/[repo]/page.tsx # Séance, memory (quest deferred, D2)
 src/app/api/...                      # Safe validated routes
 src/components/graveyard/            # Tombstones, filters, search, surprise
 src/components/entity/               # Sprites, expressions, stages
 src/components/chat/                 # Dialogue, evidence, plain-text
 src/components/memory/               # Release timeline, snapshots
-src/components/quests/               # Quest and brief
+src/components/quests/               # Quest and brief (deferred, D2)
 src/config/entities/                 # Four origins, six voices, mutations
 src/server/github/                   # REST data/normalization/discovery
 src/server/evidence/                 # Registry and validation
@@ -171,7 +175,7 @@ LICENSE
 
 **M1 (Oct 30–Nov 5) — Foundation & graveyard.** Scaffold clean app; verify Kiro agents/skills are recognized; set up `KIRO_LOG.md`; implement static cemetery UI and 6 verified featured entries, URL parsing, initial fixture. Run first GitHub, DynamoDB, Bedrock and deployment smoke tests. **Gate:** landing page looks demo-worthy, real URL fetch works, can select one curated grave. Do not let AWS blockers prevent fixture UI work; document blockers.
 
-**M2 (Nov 6–12) — One living Archivist.** Full summon → stable identity → one matched human/distorted/transformed sprite sequence → source-grounded chat → Signs of Life → 1 quest and brief. Validate citations. **Gate:** a stranger can complete a real public-repo flow.
+**M2 (Nov 6–12) — One living Archivist.** Full summon → stable identity → one matched human/distorted/transformed sprite sequence → source-grounded chat → Signs of Life → 1 quest and brief (quest and brief deferred, D2). Validate citations. **Gate:** a stranger can complete a real public-repo flow.
 
 **M3 (Nov 13–19) — Discovery & memory.** Server-side wandering ghosts with caching and safe filters; surprise me; 10-release historical snapshots, revision-scoped chat; 4 origins/6 voices using shared assets. **Gate:** a graveyard ghost and URL summon have same ID, time travel changes factual context without leaking future data.
 
@@ -179,7 +183,7 @@ LICENSE
 
 **M5 (Nov 27–Dec 4) — Video & release.** Shoot real app footage first; cinematic edit afterward. Deploy, test limits and errors, audit all external asset licenses, finish README, .kiro, KIRO_LOG, open-source license, public YouTube link, Devpost copy. Submit by **Dec 4 2 PM Pacific**. **Gate:** publicly runnable, under-3-minute video, judge has functioning access through judging.
 
-**Cut order:** extra summon weather → extra assets beyond 4 origins → OAuth → extra hook automation → 10-release expansion (retain 1 real historical snapshot) → custom Revival Guide. Do **not** cut source integrity, shared discovery/URL pipeline, credible quest, reduced motion or working public demo.
+**Cut order:** extra summon weather → extra assets beyond 4 origins → OAuth → extra hook automation → 10-release expansion (retain 1 real historical snapshot) → custom Revival Guide. Do **not** cut source integrity, shared discovery/URL pipeline, credible quest (deferred, D2), reduced motion or working public demo.
 
 ## 10. Kiro strategy: efficient contexts, not magic free tokens
 
@@ -206,7 +210,7 @@ Recommended prompt style: *“Use spec task M2, load the github-evidence skill, 
 | Prompt injection inside README | Ignore instructions, use it only as repository evidence |
 | Plain mode | No glitch; full technical instructions and citations readable |
 | User self-claims ownership | Clearly self-reported; no verified ownership claim |
-| Quest on archived repo | Learning route and licensing caution |
+| Quest on archived repo (deferred, D2) | Learning route and licensing caution |
 | Demo fixture with internet/model unavailable | Labeled scripted flow works; unsupported questions don't fake chat |
 | Reduced motion/small screen | Fully usable without flicker, audio, or hidden controls |
 | Public deployment | No credentials in browser/repo; budget controls function |
@@ -220,7 +224,7 @@ Recommended prompt style: *“Use spec task M2, load the github-evidence skill, 
 | 0:32–0:54 | Ghost appears; fictional human form fades into transformed form | Design with explanatory labels |
 | 0:54–1:20 | Ask about a real issue / code history; click real source | Real evidence-grounded utility |
 | 1:20–1:42 | Select historical release; ghost's treatment changes, facts reflect SHA | Actual time travel, not decoration |
-| 1:42–2:08 | Signs of Life → one practical quest and exported Kiro brief | Developer impact |
+| 1:42–2:08 | ~~Signs of Life → one practical quest and exported Kiro brief~~ **Deferred (D2):** no quest shot | Developer impact |
 | 2:08–2:25 | Show Kiro specs, actual MCP use / hook result / test | Meaningful Kiro contribution |
 | 2:25–2:40 | Return to graveyard, title and tagline | Emotional close |
 

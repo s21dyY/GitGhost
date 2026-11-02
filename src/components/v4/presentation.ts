@@ -1,4 +1,5 @@
 import { firstWords, type EntityIdentity } from "@/config/entities";
+import type { Vitality } from "@/domain/status";
 import type { EraData, Stage } from "./data";
 import type { Emotion, Tone } from "./fixtures";
 
@@ -61,9 +62,10 @@ export type PresentationEra = Pick<EraData, "stage" | "emotion" | "tone" | "ghos
  * (config/entities/voices.ts): a person with its own temperament, the person slipping, or the thing underneath.
  * Without it (the offline demo) the generic lines above are used.
  */
-export function presentationFor(ids: readonly string[], saved: SavedStage, identity?: EntityIdentity): PresentationEra[] {
+export function presentationFor(ids: readonly string[], saved: SavedStage, identity?: EntityIdentity, vitality: Vitality = "dead"): PresentationEra[] {
   return ids.map((id, i) => {
-    const stage = stageFor(i, ids.length, saved);
+    // A living repository was never left behind: it is a person in every era, never the decaying ghost.
+    const stage: Stage = vitality === "alive" ? "human" : stageFor(i, ids.length, saved);
     const h = hashString(id);
     return {
       stage,

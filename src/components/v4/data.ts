@@ -53,7 +53,7 @@ export type GameData = {
   /** Fictional archetype from the saved identity, for example "The Archivist". */
   archetype: string;
   /** Which drawn body the ghost wears. Chosen from the saved identity, never rerolled. Defaults to the Archivist. */
-  sprite?: "archivist" | "watchkeeper" | "hound" | "clockmaker";
+  sprite?: "archivist" | "watchkeeper" | "hound" | "clockmaker" | "bellwraith";
   /** Cosmetic backdrop family chosen from the repository metadata (scene-theme.ts). Defaults to the old graveyard. */
   scene?: "graveyard" | "network" | "frontend" | "infra" | "data" | "comms";
   /** Plain statement of the repository's status as retrieved, or a fixture notice. */
@@ -61,8 +61,12 @@ export type GameData = {
   identity: { state: "saved" | "provisional" | "mock"; note: string | null };
   /** How replies are produced right now. Display only: the server decides. */
   replyMode: "scripted" | "model" | "unavailable";
+  /** Whether the Specialist (deep code analysis) can be asked on this server (src/server/specialist/config.ts). */
+  specialist: boolean;
   /** The ghost's saved form: what it looks like when no era is selected (or none could be read). */
   restingStage: Stage;
+  /** Alive (committed to within a year, or not judged) or left behind (archived or quiet): see domain/status.ts. */
+  vitality: "alive" | "dead";
   eras: EraData[];
   history: { complete: boolean; total: number | null; note: string | null };
   evidence: EvidenceData[];

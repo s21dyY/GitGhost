@@ -1,4 +1,6 @@
 # Cost controls and abuse limits (Milestone 2B)
+> **Note (2026-11-02).** These controls are current. The one-request-per-day V6 smoke-test ceiling is superseded: live calls no longer need per-call approval, the daily budget (`GITGHOST_DAILY_BUDGET_USD`, currently 1.00) is the binding limit, input/output caps are 32,000/800 tokens, and a reply refused for its format is retried once (both calls billed). See `.kiro/steering/decisions.md` (D1).
+
 
 Status: implemented and unit-tested with fakes. **No Bedrock call was made. No AWS resource was created or changed. Nothing is deployed.** The numbers below are initial development values, not verified production-safe values.
 

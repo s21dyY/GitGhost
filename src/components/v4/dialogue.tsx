@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Reply, ReplySegment, SegmentKind } from "./data";
 import { EMOTION_LABEL, type Emotion } from "./fixtures";
 import { useDevMode } from "./dev";
 import { useGame } from "./game-context";
-import { CiteChip, MockBadge } from "./panels";
-import { playVoice } from "@/lib/sound";
+import { CiteChip } from "./panels";
+import { playSfx, playVoice } from "@/lib/sound";
+import type { Choice } from "./encounter";
 import { fragment } from "./speech";
 import { useReveal } from "./typewriter";
 import { V4Ghost, type Form, type Frame } from "./V4Ghost";
@@ -132,16 +133,82 @@ function ReplyNote({ reply }: { reply: Reply }) {
   );
 }
 
+export type Intro = { beats: ReplySegment[][]; step: number; done: boolean; onNext: () => void; onDone: () => void };
+
+/**
+ * True when keyboard focus is on nothing the visitor can see. Next keeps earlier pages alive but hidden, so after the
+ * first ghost, focus is often left on an element of a page that is no longer on screen: that counts as nothing too.
+ */
+function focusIsIdle(el: Element | null = document.activeElement): boolean {
+  if (!el || el === document.body || !el.isConnected) return true;
+  const h = el as HTMLElement;
+  return typeof h.checkVisibility === "function" ? !h.checkVisibility() : h.offsetParent === null && getComputedStyle(h).position !== "fixed";
+}
+
+/** The RPG choice menu: a ▶ cursor on the focused line, arrow keys move it, Enter chooses. */
+function ChoiceMenu({ choices, onChoose }: { choices: Choice[]; onChoose: (c: Choice) => void }) {
+  const ref = useRef<HTMLUListElement>(null);
+  // Fresh from the opening (focus on nothing, or on the continue button), the cursor lands on the first line.
+  useEffect(() => {
+    if (focusIsIdle() || document.activeElement?.classList.contains("v4-beat-next")) ref.current?.querySelector("button")?.focus();
+  }, []);
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    const all = Array.from(ref.current?.querySelectorAll("button") ?? []);
+    const at = all.indexOf(document.activeElement as HTMLButtonElement);
+    e.preventDefault();
+    all[(at + (e.key === "ArrowDown" ? 1 : all.length - 1)) % all.length]?.focus();
+  };
+  return (
+    <ul ref={ref} className="v4-menu" aria-label="What do you say?" onKeyDown={onKey} data-testid="choices">
+      {choices.map((c) => (
+        <li key={c.id}>
+          <button type="button" className="v4-menu-item" data-choice={c.id} onClick={() => onChoose(c)} onMouseEnter={() => playSfx("hover")} data-testid={`choice-${c.id}`}>
+            {c.label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function Dialogue({
   eraIdx, form, expr, frame, talking, corrupt, items, revealId, busy, reduced, draft, inputRef,
-  error, onRetry, onDraft, onAsk, onRevealDone, onCite,
+  error, onRetry, onDraft, onAsk, onRevealDone, onCite, intro, choices, onChoose,
 }: {
   eraIdx: number; form: Form; expr: Emotion; frame: Frame | null; talking: boolean; corrupt: boolean;
   items: LogItem[]; revealId: number | null; busy: boolean; reduced: boolean; draft: string;
   inputRef: React.RefObject<HTMLInputElement | null>; error: AskError | null; onRetry: () => void;
   onDraft: (v: string) => void; onAsk: (q: string) => void; onRevealDone: (id: number) => void; onCite: (ids: string[]) => void;
+  intro: Intro | null; choices: Choice[] | null; onChoose: (c: Choice) => void;
 }) {
   const uid = useId();
+  // The opening: which beat has finished typing. With reduced motion every beat is shown whole at once.
+  const [beatDone, setBeatDone] = useState(-1);
+  const lastBeat = intro ? intro.beats.length - 1 : -1;
+  const beatReady = !!intro && (reduced || beatDone >= intro.step);
+  const opening = !!intro && !intro.done;
+  useEffect(() => {
+    if (intro && !intro.done && beatReady && intro.step === lastBeat) intro.onDone();
+  }, [intro, beatReady, lastBeat]);
+  // When a line has finished, the ▼ takes keyboard focus (unless the visitor is busy with another visible control),
+  // so Enter or Space moves on. Enter or Space with focus on nothing visible does the same.
+  const nextRef = useRef<HTMLButtonElement>(null);
+  const canNext = opening && beatReady && !!intro && intro.step < lastBeat;
+  useEffect(() => {
+    if (canNext && focusIsIdle()) nextRef.current?.focus({ preventScroll: true });
+  }, [canNext, intro?.step]);
+  useEffect(() => {
+    if (!canNext) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key === "Enter" || e.key === " ") && focusIsIdle(e.target as Element | null)) {
+        e.preventDefault();
+        intro!.onNext();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [canNext, intro]);
   const g = useGame();
   const dev = useDevMode();
   const era = g.eras[eraIdx];
@@ -173,13 +240,25 @@ export function Dialogue({
         <h2 id={`${uid}-h`} className="v4-nameplate" data-testid="nameplate">{g.ghostName}</h2>
         {dev ? <span className="v4-quiet">{EMOTION_LABEL[expr]}</span> : null}
         {past && era ? <span className="rpg-tag tag-reading v4-mock" data-testid="dlg-era">as of {era.sha}</span> : null}
-        <MockBadge />
       </div>
       <div className="v4-dlg-box">
         <Portrait form={form} expr={expr} frame={frame} talking={talking} />
         <div className="v4-dlg-main">
-          <div ref={logRef} className="v4-log" role="log" aria-live="off" tabIndex={0} aria-label="Conversation" data-testid="v4-log">
-            {items.length === 0 ? (
+          {/* during the opening, a click anywhere in the conversation moves it on, as in an RPG text box */}
+          <div ref={logRef} className="v4-log" role="log" aria-live="off" tabIndex={0} aria-label="Conversation" data-testid="v4-log" data-opening={canNext || undefined}
+            onClick={(e) => { if (canNext && !(e.target as Element).closest("button, a")) intro!.onNext(); }}>
+            {intro ? (
+              <>
+                {intro.beats.slice(0, intro.step + 1).map((beat, i) => (
+                  <div key={`beat-${i}`} className="v4-turn v4-beat" data-testid="encounter-beat">
+                    <Typed segments={beat} animate={!reduced && opening && i === intro.step} resetKey={`beat-${i}`} onDone={() => setBeatDone((d) => Math.max(d, i))} onCite={onCite} voice={form} />
+                  </div>
+                ))}
+                {opening && beatReady && intro.step < lastBeat ? (
+                  <button ref={nextRef} type="button" className="v4-beat-next" onClick={intro.onNext} aria-label="Continue" data-testid="beat-next">▼</button>
+                ) : null}
+              </>
+            ) : items.length === 0 ? (
               <div className="v4-turn">
                 <Typed segments={[{ kind: "ghost", text: greeting, cites: [] }]} animate={!reduced} resetKey={era?.id ?? "none"} onCite={onCite} voice={form} />
                 {era && dev ? (
@@ -223,6 +302,7 @@ export function Dialogue({
               </div>
             ) : null}
           </div>
+          {choices ? <ChoiceMenu choices={choices} onChoose={onChoose} /> : null}
           <form onSubmit={submit} className="v4-form">
             <div className="v4-askrow">
               <label htmlFor={`${uid}-q`} className="sr-only">Your question</label>

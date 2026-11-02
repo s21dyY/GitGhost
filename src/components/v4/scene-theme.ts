@@ -4,7 +4,7 @@
  * it says nothing about what the project is or why it stopped, and it is deterministic (same repository, same scene).
  */
 export type SceneFamily = "graveyard" | "network" | "frontend" | "infra" | "data" | "comms";
-export type SpriteKind = "archivist" | "watchkeeper" | "hound" | "clockmaker";
+export type SpriteKind = "archivist" | "watchkeeper" | "hound" | "clockmaker" | "bellwraith";
 export const SCENES: readonly SceneFamily[] = ["graveyard", "network", "frontend", "infra", "data", "comms"];
 
 type Meta = { name?: string | null; description?: string | null; language?: string | null; topics?: readonly string[] | null };
@@ -40,13 +40,14 @@ export const SCENE_PLACE: Record<SceneFamily, string> = {
 };
 
 /**
- * The drawn body for a saved identity. A watchkeeper or radio operator keeps its own body. The other origins
+ * The drawn body for a saved identity. A watchkeeper, radio operator, clockmaker or bellwraith keeps its own body. The other origins
  * take the body that suits the scene, so different kinds of repository are haunted by different kinds of spirit.
  */
 export function spriteFor(originId: string | undefined, scene: SceneFamily = "graveyard"): SpriteKind {
   if (originId === "watchkeeper") return "watchkeeper";
   if (originId === "radio-operator") return "hound";
   if (originId === "clockmaker") return "clockmaker";
+  if (originId === "bellwraith") return "bellwraith";
   const bySceneKind: Record<SceneFamily, SpriteKind> = { graveyard: "archivist", frontend: "archivist", data: "archivist", network: "hound", comms: "hound", infra: "watchkeeper" };
   return bySceneKind[scene];
 }

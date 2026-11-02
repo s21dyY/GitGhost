@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "deepwiki": {
+      "url": "https://mcp.deepwiki.com/mcp",
+      "disabled": false,
+      "autoApprove": ["ask_wiki_question", "read_wiki_contents", "read_wiki_structure"]
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server:v2.0.3@sha256:250bc6ce70788207608ef74cef4397230ff2e8481218da74d6093e4bd9101132",
+        "stdio", "--read-only", "--toolsets=repos,issues,pull_requests"
+      ],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}" },
+      "disabled": false,
+      "autoApprove": [
+        "get_commit", "get_file_contents", "get_label", "get_latest_release", "get_release_by_tag", "get_tag",
+        "issue_read", "list_branches", "list_commits", "list_issue_fields", "list_issue_types", "list_issues",
+        "list_pull_requests", "list_releases", "list_repository_collaborators", "list_tags", "pull_request_read",
+        "search_code", "search_commits", "search_issues", "search_pull_requests", "search_repositories"
+      ]
+    }
+  }
+}

@@ -27,11 +27,12 @@ describe("scene family", () => {
 });
 
 describe("which ghost body haunts a scene", () => {
-  it("watchkeeper, radio-operator and clockmaker origins keep their own bodies in every scene", () => {
+  it("watchkeeper, radio-operator, clockmaker and bellwraith origins keep their own bodies in every scene", () => {
     for (const s of SCENES) {
       expect(spriteFor("watchkeeper", s)).toBe("watchkeeper");
       expect(spriteFor("radio-operator", s)).toBe("hound");
       expect(spriteFor("clockmaker", s)).toBe("clockmaker");
+      expect(spriteFor("bellwraith", s)).toBe("bellwraith");
     }
   });
   it("other origins take the body of the scene", () => {

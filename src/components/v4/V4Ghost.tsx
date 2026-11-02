@@ -52,11 +52,16 @@ const ALT: Record<Kind, Record<Form, string>> = {
     distorted: "A clockmaker whose torn cheek shows turning gears. The loupe is cracked and bleeding, a pale extra hand reaches from behind to wind the watch, and gears spill from the apron.",
     horror: "A dark blue figure whose head is a clock face full of stars, with two fixed eyes and spinning hands. Thin jointed arms move around it, and the pocket watch glows.",
   },
+  bellwraith: {
+    human: "A pale, kind-faced bell-ringer in a tall pointed brown hood and an ochre scarf, holding a brass hand-bell low at one side.",
+    distorted: "A bell-ringer in a red robe. Half the face is torn into a dark wound full of small teeth, the robe hangs open over the ribs, and blood drips past the brass bell.",
+    horror: "A green, hooded figure crowned with spikes of light. Its face is a dark hollow ringed with yellow eyes, a starry void opens in its chest, and it still holds the brass bell.",
+  },
 };
 
 /** Which ghost body to draw. The Archivist is the fully polished one; the others share its forms, expressions and states. */
-export type Kind = "archivist" | "watchkeeper" | "hound" | "clockmaker";
-export const KINDS: Kind[] = ["archivist", "watchkeeper", "hound", "clockmaker"];
+export type Kind = "archivist" | "watchkeeper" | "hound" | "clockmaker" | "bellwraith";
+export const KINDS: Kind[] = ["archivist", "watchkeeper", "hound", "clockmaker", "bellwraith"];
 const atlasUrl = (kind: Kind, form: Form) => (kind === "archivist" ? `/sprites/v4/atlas-${form}.png` : `/sprites/v4/atlas-${kind}-${form}.png`);
 const idleUrl = (kind: Kind, form: Form) => (kind === "archivist" ? `/sprites/v4/idle-${form}.png` : `/sprites/v4/idle-${kind}-${form}.png`);
 const stripUrl = (kind: Kind) => (kind === "archivist" ? "/sprites/v4/transform.png" : `/sprites/v4/transform-${kind}.png`);

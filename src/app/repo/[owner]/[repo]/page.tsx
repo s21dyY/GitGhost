@@ -6,6 +6,7 @@ import { RepoError, RepoLoading, RepoView } from "@/components/repo/RepoView";
 import { buildLiveData } from "@/components/v4/live-data";
 import { V4Game } from "@/components/v4/V4Game";
 import { preflightChat } from "@/server/chat/service";
+import { specialistReadiness } from "@/server/specialist/config";
 import { GitHubError } from "@/server/github/client";
 import { fetchHistoryCached, type History } from "@/server/github/history";
 import type { GhostView } from "@/components/entity/GhostPanel";
@@ -59,7 +60,7 @@ async function Seance({ params, searchParams }: { params: Promise<{ owner: strin
     }
     const pre = preflightChat(process.env, () => undefined);
     const replyMode = pre.ok ? (pre.config.provider === "bedrock" ? "model" : "scripted") : "unavailable";
-    return <V4Game data={buildLiveData({ summoned: result.data, history, historyProblem, ghost, replyMode })} />;
+    return <V4Game data={buildLiveData({ summoned: result.data, history, historyProblem, ghost, replyMode, specialist: specialistReadiness().ok })} />;
   }
   // Debug controls and internal IDs are shown only by `next dev`, never in production builds.
   const devTools = process.env.NODE_ENV === "development";

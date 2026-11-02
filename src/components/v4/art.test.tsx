@@ -71,7 +71,7 @@ describe("V4 character art", () => {
     expect(houndJerk(0, 10)).toEqual({ dx: 0, dy: 0, shear: 0 }); // the living hound moves like a dog
   });
   it("the Watchkeeper and the Hound ship idle loops too, and their frames really move", () => {
-    for (const kind of ["watchkeeper", "hound", "clockmaker"] as const) for (const f of FORMS) {
+    for (const kind of ["watchkeeper", "hound", "clockmaker", "bellwraith"] as const) for (const f of FORMS) {
       const p = png(`public/sprites/v4/idle-${kind}-${f}.png`);
       expect([p.w, p.h]).toEqual([64 * IDLE.frames, 80 * EXPRS.length]);
       expect(new Set(Array.from({ length: IDLE.frames }, (_, i) => grid(variantIdleFrame(kind, FORM_T[f], "neutral", i)))).size).toBeGreaterThanOrEqual(6);
@@ -124,7 +124,7 @@ describe("V4 character art", () => {
 });
 
 describe("the other ghosts", () => {
-  for (const kind of ["watchkeeper", "hound", "clockmaker"] as const) {
+  for (const kind of ["watchkeeper", "hound", "clockmaker", "bellwraith"] as const) {
     it(`${kind}: ships three form atlases and a 12-frame morph strip`, () => {
       for (const f of FORMS) expect([png(`public/sprites/v4/atlas-${kind}-${f}.png`).w, png(`public/sprites/v4/atlas-${kind}-${f}.png`).h]).toEqual([64 * 6, 80 * 6]);
       expect([png(`public/sprites/v4/transform-${kind}.png`).w, png(`public/sprites/v4/transform-${kind}.png`).h]).toEqual([64 * TRANSFORM.length, 80]);

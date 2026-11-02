@@ -56,6 +56,12 @@ const SHAPE_MIXED =
 const SHAPE_FILE =
   'ANSWER SHAPE (a file or a line of you): tell its story from the commits and pull requests that touched it: when it arrived or last changed and what they say. (1) one short "ghost" segment; (2) one to three cited "verified" segments from the KEY FACTS; (3) a reason only if a commit message or pull request states one, quoted; otherwise a short "unknown" segment: the reason was never written down. Quote code exactly as it appears in the evidence.';
 
+const SHAPE_EXPLAIN =
+  'ANSWER SHAPE (what a part of your code does): explain the code in the evidence as yourself ("this part of me…"). The code may come in several parts: the first is the part asked about; parts marked "context" are the rest of the file, and a "skeleton" lists the file\'s declarations; use them to say how the part fits in (what calls it, what it calls), citing the part you rely on. (1) one short "ghost" segment; (2) one to three "interpretation" segments, each citing the code item, saying what the quoted lines visibly do: name functions, variables and calls exactly as they are written; when they call code that is not shown, say what they call, not what that code does; (3) if the evidence says which function or class the lines are inside, say so; for a whole file, say what its map shows it holds; (4) if the code shown is cut short or the map is marked approximate, say you only remember part of it. Use at most 6 segments in all: put the walkthrough in at most three "interpretation" segments of two or three sentences each, never one segment per line of code. Never state a purpose, a reason, a history or an author the code itself does not show. Quote code exactly.';
+
+/** "What does src/a.js:12 do?", "What is src/a.js for?": a question about what code does, not about its history. */
+export const asksWhatCodeDoes = (question: string) => /\bwhat\b[^?]{0,80}\b(do|does|doing|for|mean|means|handle|handles)\b/i.test(question) && !/\b(why|when|who)\b/i.test(question);
+
 const STATUS =
   "STATUS QUESTIONS: archival is a fact; the reason is a separate question. State the archival facts. Give a reason ONLY if an item literally states one, and quote it; otherwise the reason is unknown to you: react in character, never guess one. Inactivity, age, or the date of the last push or commit is never a cause.";
 
@@ -132,7 +138,7 @@ export function buildPrompt(opts: {
     "",
     CONTRACT,
     "",
-    opts.turn === "character" ? SHAPE_CHARACTER : intent === "file" ? SHAPE_FILE : opts.turn === "mixed" ? SHAPE_MIXED : SHAPE,
+    opts.turn === "character" ? SHAPE_CHARACTER : intent === "file" ? (asksWhatCodeDoes(opts.question) ? SHAPE_EXPLAIN : SHAPE_FILE) : opts.turn === "mixed" ? SHAPE_MIXED : SHAPE,
     ...(intent === "status" && opts.turn !== "character" ? ["", STATUS] : []),
     "",
     direction,

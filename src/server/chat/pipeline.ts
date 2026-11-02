@@ -11,7 +11,7 @@ import type { Stage } from "@/config/entities";
 import { loadChatConfig } from "./config";
 import { classifyTurn, temperatureFor } from "./conversation";
 import { validateModelOutput, type ModelOutputResult, type OutputDiagnostics } from "./grounding";
-import { buildPrompt } from "./prompt";
+import { asksWhatCodeDoes, buildPrompt } from "./prompt";
 import { createGroundedMock } from "./providers/grounded-mock";
 import { billableRuntime, type RuntimeClients } from "./runtime";
 import { preflightChat, runChat, type ChatDeps } from "./service";
@@ -52,6 +52,11 @@ export type PipelineDeps = RetrieveDeps & {
    * model exchange, before the answer is returned. It cannot change the result.
    */
   observe?: (e: ModelExchange) => void;
+  /**
+   * Ask once more when a reply is refused as a whole for its format (default true). The controlled validation
+   * harness turns this off: it promises an exact number of model calls.
+   */
+  retryUnreadable?: boolean;
 };
 
 export type ModelExchange = {
@@ -68,6 +73,14 @@ export type ModelExchange = {
   validation: ModelOutputResult;
   /** Convenience copy of validation.diagnostics, with the provider stop reason merged in. */
   diagnostics: OutputDiagnostics;
+};
+
+/** Said to the model when its first reply could not be read at all. Format only: never a hint about content. */
+const RETRY_NOTE: Record<string, string> = {
+  too_many_segments: 'YOUR PREVIOUS REPLY WAS DISCARDED: it had more than 12 segments. Reply again with at most 6 segments; combine steps into fewer, longer segments.',
+  unknown_top_level_keys: 'YOUR PREVIOUS REPLY WAS DISCARDED: it had a top-level key other than "segments". Reply again with exactly one JSON object whose only key is "segments"; every line, including the ghost\'s, goes inside it.',
+  invalid_json: 'YOUR PREVIOUS REPLY WAS DISCARDED: it was not valid JSON. Reply again with exactly one JSON object and nothing else; write code in `backticks` or single quotes, never unescaped double quotes.',
+  default: 'YOUR PREVIOUS REPLY WAS DISCARDED: it did not follow the OUTPUT CONTRACT. Reply again with exactly one JSON object whose only key is "segments", holding 1 to 6 segments.',
 };
 
 const fail = (status: number, code: string, message: string, retryAfterSec?: number): PipelineFailure => ({ ok: false, status, code, message, ...(retryAfterSec ? { retryAfterSec } : {}) });
@@ -90,7 +103,9 @@ export async function answerQuestion(req: PipelineRequest, deps: PipelineDeps = 
   const variant = priorUser.filter((q) => classifyIntent(q) === intent || intentForTurn(q, []) === intent).length;
 
   // A file named in this question, or (for a short follow-up such as "tell me more") in the latest one that named one.
-  const file = intent === "file" ? (detectFileRef(req.question) ?? [...priorUser].reverse().map(detectFileRef).find((f) => f) ?? null) : null;
+  const named = intent === "file" ? (detectFileRef(req.question) ?? [...priorUser].reverse().map(detectFileRef).find((f) => f) ?? null) : null;
+  // "What does this do?" reads the whole file (or its skeleton) around the part asked about; why and when do not need it.
+  const file = named && asksWhatCodeDoes(req.question) ? { ...named, whole: true } : named;
 
   // 3. Evidence (bounded, selective).
   const got = req.asOf ? await retrieveEvidenceAsOf(ref, intent, req.asOf, deps, file) : await retrieveEvidence(ref, intent, deps, file);
@@ -137,17 +152,31 @@ export async function answerQuestion(req: PipelineRequest, deps: PipelineDeps = 
     deps.providerOverride?.(refs) ??
     (billable
       ? null
-      : createGroundedMock({ refs, intent, gaps: got.gaps, assignment, voice, stage, variant, repo: { archived: got.repo.archived, fullName: got.repo.fullName }, era, file }));
+      : createGroundedMock({ refs, intent, gaps: got.gaps, assignment, voice, stage, variant, repo: { archived: got.repo.archived, fullName: got.repo.fullName }, era, file, question: req.question }));
 
   // 7. The existing safety pipeline: limits, budget, concurrency, timeout.
-  const result = await runChat(
-    { headers: req.headers, system: prompt.system, messages: prompt.messages, temperature: temperatureFor(turn) },
-    { ...runtime, ...deps.chat, env, createProvider: provider ? () => provider : (deps.chat?.createProvider ?? runtime.createProvider) },
-  );
-  if (!result.ok) return fail(result.status, result.code, result.message, result.retryAfterSec);
-
   // 8. Validate before showing anything. Unvalidated model text is never displayed.
-  const validated = validateModelOutput(result.text, refs, { era: !!era, allowProse: turn !== "factual" });
+  // A reply refused as a whole for its FORMAT (not JSON, an extra top-level key, too many segments…) is asked for
+  // once more, with the reason, through the same limits and budget. The retry is validated just as strictly.
+  const ask = (system: string) =>
+    runChat(
+      { headers: req.headers, system, messages: prompt.messages, temperature: temperatureFor(turn) },
+      { ...runtime, ...deps.chat, env, createProvider: provider ? () => provider : (deps.chat?.createProvider ?? runtime.createProvider) },
+    );
+  const check = (text: string) => validateModelOutput(text, refs, { era: !!era, allowProse: turn !== "factual" });
+  let result = await ask(prompt.system);
+  if (!result.ok) return fail(result.status, result.code, result.message, result.retryAfterSec);
+  let validated = check(result.text);
+  if (!validated.ok && billable && deps.retryUnreadable !== false) {
+    const why = validated.reason;
+    deps.observe?.({ system: prompt.system, messages: prompt.messages, rawText: result.text, usage: result.usage, reservedMicros: result.reservedMicros, spentMicros: result.spentMicros, stopReason: result.stopReason, refs, validation: validated, diagnostics: { ...validated.diagnostics, stopReason: result.stopReason } });
+    (deps.chat?.log ?? ((event: string, detail?: Record<string, unknown>) => console.error(`[chat] ${event}`, detail ?? "")))("model_output_retry", { refusedBecause: why });
+    const again = await ask(`${prompt.system}\n\n${RETRY_NOTE[why] ?? RETRY_NOTE.default}`);
+    if (again.ok) {
+      result = again;
+      validated = check(again.text);
+    }
+  }
   const diagnostics: OutputDiagnostics = { ...validated.diagnostics, stopReason: result.stopReason, truncated: result.stopReason === "max_tokens" };
   if (validated.ok) {
     const count = (k: string) => validated.segments.filter((s) => s.kind === k).length;

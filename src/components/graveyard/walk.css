@@ -1,0 +1,125 @@
+/*
+ * The graveyard game (home screen): the walkable field and its HUD. Same window language and palette as the encounter
+ * (src/components/v4/v4.css): warm black, worn bone, candle gold, blood red; hard pixel edges, no rounded corners.
+ */
+.game {
+  --void: #050304; --frame: #a69d8b; --blood: #8e0f1f; --blood-text: #ff5866; --g-bone: #e2d8c3; --g-bone-dim: #a99f8b; --g-gold: #d0a95f;
+  position: relative; z-index: 10; height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); color: var(--g-bone);
+}
+
+/* ---------- HUD: top ---------- */
+.game-top { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 14px; background: linear-gradient(rgba(3, 2, 2, 0.85), transparent); }
+.game-logo { margin: 0; font-family: var(--font-pixel), monospace; font-size: 13px; color: var(--g-bone); text-shadow: 2px 2px 0 #3a060d; opacity: 0; transition: opacity 0.4s steps(4); }
+.game:has(.walk[data-started]) .game-logo { opacity: 1; }
+.game-top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.game-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; cursor: pointer;
+  font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--g-bone);
+  background: rgba(9, 6, 7, 0.9); border: 0; box-shadow: 0 0 0 2px #000, inset 0 0 0 1px var(--frame);
+}
+.game-btn:hover, .game-btn:focus-visible { color: #fff; box-shadow: 0 0 0 2px #000, inset 0 0 0 1px var(--blood-text); outline: none; }
+.game-btn:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+.game kbd { font-family: var(--font-label), monospace; font-size: 11px; padding: 0 4px; color: var(--g-gold); box-shadow: inset 0 0 0 1px #4a3a32; }
+.game-sound { margin: 0 !important; }
+@media (max-width: 1023px) { .game-btn { min-height: 44px; } }
+/* phones: the top bar keeps its icons; the words are for screen readers */
+@media (max-width: 639px) { .game-btn-label, .game-btn kbd { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .game-logo { font-size: 11px; } }
+
+/* ---------- the field: the graveyard is the page ---------- */
+.walk { position: relative; min-height: 0; }
+.walk-field { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: crosshair; }
+/* keyboard focus: four pixel corner brackets, like a game's viewfinder, instead of a box around the whole graveyard */
+.walk-field:focus-visible { outline: none; }
+.walk-field:focus-visible::after {
+  content: ""; position: absolute; inset: 8px; pointer-events: none; z-index: 300; --c: rgba(208, 169, 95, 0.8);
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 0 0 / 2px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 100% 0 / 2px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 0 100% / 2px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) 100% 100% / 2px 18px no-repeat;
+}
+.walk-presence, .walk-visitor { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; }
+.walk-presence { cursor: pointer; }
+.walk-presence svg { filter: drop-shadow(0 0 10px rgba(120, 160, 170, 0.25)); opacity: 0.8; }
+.walk-presence[data-near] svg { opacity: 1; filter: drop-shadow(0 0 14px rgba(255, 88, 102, 0.55)); }
+.walk-prompt {
+  position: absolute; bottom: calc(100% + 6px); white-space: nowrap; padding: 3px 8px;
+  font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.06em; color: var(--g-bone); background: #000;
+  box-shadow: 0 0 0 1px var(--frame), 0 0 0 3px #000, 0 0 0 4px rgba(142, 15, 31, 0.7);
+  animation: walk-prompt 1s steps(2) infinite;
+}
+@keyframes walk-prompt { 50% { opacity: 0.55; } }
+.walk-visitor { pointer-events: none; }
+.walk-visitor-art { position: relative; display: block; width: 60px; height: 54px; filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000); }
+.walk-visitor-art[data-facing="left"] { transform: scaleX(-1); }
+.walk-frame { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.walk-frame-b { opacity: 0; }
+.walk-visitor-art[data-moving] .walk-frame-a { animation: walk-step 0.36s steps(1) infinite; }
+.walk-visitor-art[data-moving] .walk-frame-b { animation: walk-step 0.36s steps(1) infinite reverse; }
+@keyframes walk-step { 0% { opacity: 1; } 50% { opacity: 0; } }
+.walk-lantern { position: absolute; left: 50%; top: 40%; width: 240px; height: 240px; transform: translate(-50%, -50%); pointer-events: none; border-radius: 50%; background: radial-gradient(circle, rgba(255, 210, 122, 0.18), transparent 65%); mix-blend-mode: screen; }
+
+/* the title card, until the first step */
+.walk-intro { position: absolute; left: 50%; top: 8%; z-index: 200; transform: translateX(-50%); width: min(40rem, calc(100% - 32px)); pointer-events: none; transition: opacity 0.6s steps(6); }
+.walk[data-started] .walk-intro { opacity: 0; }
+.game-title-card { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.game-title { margin: 0; font-family: var(--font-pixel), monospace; font-size: clamp(30px, 7vw, 64px); line-height: 1.1; color: var(--g-bone); text-shadow: 4px 4px 0 #000, 0 0 30px rgba(142, 15, 31, 0.45); }
+.game-tagline { margin: 0; font-family: var(--font-label), monospace; font-size: clamp(14px, 2vw, 18px); color: var(--g-gold); }
+.game-start { margin: 8px 0 0; font-family: var(--font-pixel), monospace; font-size: 12px; color: var(--g-bone); animation: walk-prompt 1.1s steps(2) infinite; }
+
+/* ---------- HUD: bottom ---------- */
+.game-bottom {
+  display: grid; grid-template-columns: minmax(0, 30rem) 1fr; align-items: end; gap: 6px 18px; padding: 10px 14px 12px;
+  background: linear-gradient(transparent, rgba(3, 2, 2, 0.9) 35%);
+}
+.game-summon { margin: 0; }
+.game-summon-label { display: block; margin-bottom: 4px; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--g-gold); }
+.game-summon-row { display: flex; gap: 6px; }
+.game-summon-input {
+  flex: 1; min-width: 0; height: 36px; padding: 0 10px; font-family: var(--font-label), monospace; font-size: 14px; color: var(--g-bone);
+  background: #000; border: 0; box-shadow: inset 0 0 0 1px #4a3a32; caret-color: var(--blood-text);
+}
+.game-summon-input::placeholder { color: #6d6457; }
+.game-summon-input:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+.game-summon-input[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--blood-text); }
+.game-summon-btn {
+  height: 36px; padding: 0 14px; cursor: pointer; font-family: var(--font-pixel), monospace; font-size: 11px; color: #f4ddd6;
+  background: #1c0609; border: 0; box-shadow: 0 0 0 2px #000, inset 0 0 0 1px var(--blood);
+}
+.game-summon-btn:hover:not(:disabled), .game-summon-btn:focus-visible { background: #2c080d; box-shadow: 0 0 0 2px #000, inset 0 0 0 1px var(--blood-text); }
+.game-summon-btn:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+.game-summon-btn:disabled { opacity: 0.6; cursor: wait; }
+.game-summon-error { margin: 4px 0 0; min-height: 1.2em; font-size: 13px; color: var(--blood-text); }
+.game-keys { margin: 0; justify-self: end; display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--font-label), monospace; font-size: 12px; color: var(--g-bone-dim); }
+.game-keys span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.game-note { grid-column: 1 / -1; margin: 0; font-family: var(--font-label), monospace; font-size: 11px; color: #8a7f6c; }
+@media (max-width: 767px) {
+  .game-bottom { grid-template-columns: 1fr; }
+  .game-keys { display: none; } /* phones walk by tapping */
+  .game-summon-input, .game-summon-btn { height: 44px; }
+}
+
+/* ---------- the Presences window (the same choice as walking, as a list) ---------- */
+/* margin: auto restores the browser's centring of a modal dialog (the CSS reset sets every margin to 0) */
+.game-window { margin: auto; padding: 0; border: 0; background: transparent; color: var(--g-bone); max-width: min(34rem, calc(100vw - 32px)); }
+.game-window::backdrop { background: rgba(3, 2, 2, 0.75); }
+.game-window-inner {
+  padding: 20px 20px 16px; background: #070405;
+  box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--frame), inset 0 0 0 4px #000, inset 0 0 0 5px rgba(142, 15, 31, 0.6), 8px 8px 0 0 rgba(0, 0, 0, 0.6);
+}
+.game-window-title { margin: 0; font-family: var(--font-pixel), monospace; font-size: 13px; color: var(--g-bone); text-shadow: 2px 2px 0 #3a060d; }
+.game-window-text { margin: 8px 0 14px; font-size: 14px; line-height: 1.45; color: var(--g-bone-dim); }
+.game-presences { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.game-presence {
+  width: 100%; min-height: 96px; display: grid; justify-items: center; align-content: end; gap: 6px; padding: 10px 4px; cursor: pointer;
+  font-family: var(--font-label), monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--g-bone-dim);
+  background: #050304; border: 0; box-shadow: inset 0 0 0 1px #2c1f1b;
+}
+.game-presence:hover, .game-presence:focus-visible { color: var(--g-bone); background: linear-gradient(rgba(120, 12, 26, 0.3), transparent); box-shadow: inset 0 0 0 1px var(--blood-text); outline: none; }
+.game-presence:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .walk-prompt, .game-start, .walk-visitor-art .walk-frame-a, .walk-visitor-art .walk-frame-b { animation: none !important; }
+  .walk-visitor-art .walk-frame-b { opacity: 0; }
+  .game-logo, .walk-intro { transition: none; }
+}

@@ -74,6 +74,49 @@ const UNDERNEATH: Record<string, string[]> = {
   existential: ['Same. Same. Same. The outline remains. We are what was inside it.', 'Remember. Remember. We remember the one we were. You are reading it now.'],
 };
 
+/**
+ * EDIT HERE: a character with a voice of its own, which replaces the temperament and horror voices above in every form.
+ * `echo` marks a ghost that, once changed, cannot speak for itself: its facts come out as exact quotes from the
+ * evidence, repeated (see grounded-mock.ts). Echoes are verbatim and cited, so they are as true as any fact line.
+ */
+type OriginVoice = {
+  echo: boolean;
+  speech: Record<Stage, string>;
+  lines: Record<Stage, { hello: string[]; bridge: string; bye: string[] }>;
+};
+const ORIGIN_VOICE: Record<string, OriginVoice> = {
+  bellwraith: {
+    echo: true,
+    speech: {
+      human: 'FORM VOICE: the repository itself as a warm bell-ringer, whatever its temperament: glad of the company, kind, generous with what it knows; calls the visitor "friend"; may ring its little bell for them. Natural first-person speech. No ellipses, stutters or repeats.',
+      distorted: 'FORM VOICE: the warmth is failing. Ghost segments begin kindly and break off into the echo of their own last word ("friend… friend… friend"). It can barely say anything new: in verified segments it repeats exact words from the evidence in quotation marks (the README\'s first line, a line of code, a commit message) and then echoes the last few of them once. Never paraphrase a quote.',
+      transformed: 'FORM VOICE: it has no words of its own any more. Ghost segments are only the bell ("Dong. Dong. Dong.") and at most one word of its own. Everything else is repetition: verified segments are exact quotes from the evidence (what it was for, a line of its code, a commit message), each repeated shorter and shorter like a bell\'s echo: "a viewer for old maps" … "old maps" … "maps". Never paraphrase, never explain.',
+    },
+    lines: {
+      human: {
+        hello: ['Oh, come in, friend! I rang the bell for you.', 'There you are. Come in out of the cold, friend. Sit by the rope, it is warmer there.', 'Welcome, welcome! Every visitor gets a bell, and you get the best one.'],
+        bridge: 'Let me ring it out for you, nice and clear:',
+        bye: ['There now. Ask me anything else, friend; I am glad of the company.', 'Come back whenever you like. I will ring when you do.'],
+      },
+      distorted: {
+        hello: ['Welcome, friend, welcome, I… welcome. Welcome. Welcome.', 'Come in, I rang for… rang for… rang for you.', 'Friend. Sit. I had something to tell you. Tell you. Tell you.'],
+        bridge: 'I can only say it back to you. Back to you:',
+        bye: ['Friend… friend… friend.', 'Again. Again. Again.'],
+      },
+      transformed: {
+        hello: ['Dong. Dong. Dong.', 'Dong… dong… dong.'],
+        bridge: 'Dong.',
+        bye: ['Dong. Dong.', 'Dong…'],
+      },
+    },
+  },
+};
+
+/** True when this ghost, in this form, can only repeat what it heard. */
+export function echoes(entity: EntityIdentity, stage: Stage): boolean {
+  return stage !== 'human' && ORIGIN_VOICE[resolveEntity(entity).origin.id]?.echo === true;
+}
+
 const pick = <T,>(list: readonly T[], key: string): T => {
   let h = 2166136261;
   for (const c of key) h = Math.imul(h ^ c.codePointAt(0)!, 16777619);
@@ -85,6 +128,8 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** The model's instruction for this form's voice. Kept short: the whole prompt has a token cap. */
 export function formVoice(entity: EntityIdentity, stage: Stage): string {
   const { origin, horror, temperament } = resolveEntity(entity);
+  const own = ORIGIN_VOICE[origin.id];
+  if (own) return `${own.speech[stage]} This voice replaces the temperament and horror voice given above.`;
   if (stage === 'human') {
     return `FORM VOICE: the repository itself as a living person, not its keeper. ${TEMPERAMENT_SPEECH[temperament.id] ?? ''} Natural first-person speech; may show one habit (${origin.habits[0].toLowerCase()}). No ellipses, stutters or repeats.`;
   }
@@ -99,6 +144,11 @@ export function formVoice(entity: EntityIdentity, stage: Stage): string {
 /** Scripted lines in this form's voice: an opener, a turn of phrase before the facts, a closer. */
 export function formLines(entity: EntityIdentity, stage: Stage, key: string): { opener: string; bridge: string; closer: string } {
   const { origin, horror, temperament } = resolveEntity(entity);
+  const own = ORIGIN_VOICE[origin.id];
+  if (own) {
+    const l = own.lines[stage];
+    return { opener: pick(l.hello, `${key}:o`), bridge: l.bridge, closer: pick(l.bye, `${key}:c`) };
+  }
   if (stage === 'human') {
     const p = PERSON[temperament.id] ?? PERSON.reserved;
     return { opener: pick([...p.hello, ...origin.greetings], `${key}:o`), bridge: p.bridge, closer: pick(p.bye, `${key}:c`) };
@@ -123,4 +173,5 @@ export const allFormLinesForTests = (): string[] => [
   ...Object.values(PERSON).flatMap((p) => [...p.hello, p.bridge, ...p.bye]),
   ...Object.values(SLIPPING).flat(),
   ...Object.values(UNDERNEATH).flat(),
+  ...Object.values(ORIGIN_VOICE).flatMap((o) => Object.values(o.lines).flatMap((l) => [...l.hello, l.bridge, ...l.bye])),
 ];

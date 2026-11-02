@@ -44,7 +44,8 @@ export function liveAsk(data: Pick<GameData, "repo" | "eras">, fetchImpl: typeof
           repo: data.repo.name,
           question,
           history,
-          form: "current",
+          // a living repository's ghost speaks as the person it still is (the server's human voice)
+          form: !timeTravel && era?.stage === "human" ? "human" : "current",
           ...(timeTravel ? { asOf: era.fullSha, eraStage: era.stage } : {}),
         }),
       });

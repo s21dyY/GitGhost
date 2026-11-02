@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useReducedMotion } from "@/components/v4/anim";
 import { ARRIVE_KEY } from "@/components/v4/arrival";
+import { rememberVia, type Via } from "@/components/v4/encounter";
 import { PixelWipe } from "@/components/fx/PixelWipe";
 import { playSfx } from "@/lib/sound";
 
@@ -11,7 +12,8 @@ export const SUMMON_MS = 1500;
 
 /** Where the summoning came from, as 0..1 of the viewport: the dark closes in on that point. */
 export type Origin = { x: number; y: number };
-type Summon = (href: string, origin?: Origin) => void;
+/** `via`: how the visitor chose (a presence in the graveyard, or a typed name); the ghost greets them for it. */
+type Summon = (href: string, origin?: Origin, via?: Exclude<Via, "direct">) => void;
 const Ctx = createContext<Summon>(() => undefined);
 export const useSummon = () => useContext(Ctx);
 
@@ -53,10 +55,11 @@ export function SummonProvider({ children }: { children: ReactNode }) {
     [],
   );
   const summon = useCallback(
-    (href: string, origin: Origin = { x: 0.5, y: 0.45 }) => {
+    (href: string, origin: Origin = { x: 0.5, y: 0.45 }, via: Exclude<Via, "direct"> = "graveyard") => {
       if (busy.current) return;
       busy.current = true;
       playSfx("summon");
+      rememberVia(via);
       try {
         if (!reduced) window.sessionStorage.setItem(ARRIVE_KEY, "1");
       } catch {

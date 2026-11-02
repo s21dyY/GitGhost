@@ -29,8 +29,8 @@ const STAGES = ["human", "distorted", "transformed"] as const;
 const repo = (over: Partial<RepoSignals> = {}): RepoSignals => ({ repoId: 1663468, repoName: "mozilla/pdf.js", ...over });
 
 describe("config pack matches the design brief", () => {
-  it("has the four human origins, six voices and five temperaments", () => {
-    expect(HUMANS.map((h) => h.id)).toEqual(["archivist", "radio-operator", "clockmaker", "watchkeeper"]);
+  it("has the five human origins, six voices and five temperaments", () => {
+    expect(HUMANS.map((h) => h.id)).toEqual(["archivist", "radio-operator", "clockmaker", "watchkeeper", "bellwraith"]);
     expect(HORRORS.map((h) => h.id)).toEqual(["regret", "haunting", "body", "cosmic", "monster", "existential"]);
     // "reserved" is the canonical temperament ID (BUILD.md section 5 matches). See INTEGRATION_NOTES.md.
     expect(TEMPERAMENTS.map((t) => t.id)).toEqual(["reserved", "irritable", "tender", "curious", "formal"]);
@@ -61,7 +61,7 @@ describe("config pack matches the design brief", () => {
       expect(m.asset.status).toBe("needs-art");
       keys.push(m.asset.key);
     }
-    expect(keys.length).toBe(19);
+    expect(keys.length).toBe(22);
     expect(new Set(keys).size).toBe(keys.length);
   });
 

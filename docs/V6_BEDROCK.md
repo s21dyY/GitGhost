@@ -1,4 +1,6 @@
 # V6: real AWS Bedrock conversation (Phases 1 to 3: readiness; NOTHING PAID HAS BEEN RUN)
+> **Historical (superseded 2026-11-02).** The one-call / separate-approval Bedrock plan described here was cancelled by the owner; see `.kiro/steering/decisions.md` (D1). Kept as a record; do not use it as the current policy.
+
 
 Date: 2026-11-01 (UTC). No model call, no kill-switch change, no AWS write, no IAM change. `.env.local` is unchanged (provider `mock`, flag `false`). Read-only AWS calls only (the preflight).
 

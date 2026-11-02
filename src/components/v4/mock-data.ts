@@ -15,7 +15,9 @@ export function mockGameData(): GameData {
     statusLine: "Archived (invented fixture)",
     identity: { state: "mock", note: "Invented fixture. No identity is saved." },
     replyMode: "scripted",
+    specialist: false, // the invented repository has no real commit for the Specialist to read
     restingStage: ERAS[ERAS.length - 1].stage,
+    vitality: "dead", // the invented repository is archived
     eras: ERAS.map((e) => ({
       id: e.id, sha: e.sha, fullSha: null, date: e.date, message: e.message, url: null,
       stage: e.stage, emotion: e.emotion, tone: e.tone, ghostLine: e.ghostLine, evidenceId: e.evidenceId,

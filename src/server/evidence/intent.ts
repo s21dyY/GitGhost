@@ -49,7 +49,8 @@ export function detectCompare(question: string, now = new Date()): CompareSpec |
  * "src/api.ts:42", "server.py#L10-L20", "line 42 of index.js". The path is checked so it can only ever name
  * a file inside the repository: no "..", no leading slash, no URL, a sane length and a code-like extension.
  */
-export type FileRef = { path: string; line?: number; endLine?: number };
+/** A file a question names. `whole`: read the rest of the file too (set by the server for "what does this do"). */
+export type FileRef = { path: string; line?: number; endLine?: number; whole?: boolean };
 
 const EXT = "js|mjs|cjs|jsx|ts|tsx|py|rb|go|rs|java|kt|kts|c|h|cc|cpp|hpp|cs|php|swift|m|mm|scala|sh|bash|zsh|ps1|yml|yaml|json|toml|ini|cfg|conf|md|rst|txt|css|scss|sass|less|html|htm|vue|svelte|sql|lua|pl|pm|r|dart|ex|exs|erl|hrl|hs|ml|clj|cljs|groovy|gradle|xml|proto|graphql|tf|lock|coffee|el|vim|nix|zig|jl|asm|s";
 const PATH_RE = new RegExp(`(?:^|[\\s\`'"(\\[])((?:[\\w@+-][\\w.@+-]*/)*[\\w@+-][\\w.@+-]*\\.(?:${EXT}))(?::(\\d{1,6})(?:-(\\d{1,6}))?|#L(\\d{1,6})(?:-L?(\\d{1,6}))?)?(?=$|[\\s\`'"),?!:;\\].])`, "i");

@@ -1,10 +1,11 @@
-import { issuePerformance, resolveEntity, type Stage } from "@/config/entities";
+import { echoes, issuePerformance, resolveEntity, type Stage } from "@/config/entities";
 import { identityFromAssignment, type EntityAssignment } from "@/domain/entity";
 import type { Gap } from "@/server/evidence/retrieve";
 import type { EvidenceRef } from "@/server/evidence/select";
 import { STATUS_NOTICE_RE, type FileRef, type Intent } from "@/server/evidence/intent";
 import { REASON_RE } from "@/server/evidence/plan";
 import type { ModelSegment } from "../grounding";
+import { asksWhatCodeDoes } from "../prompt";
 import { estimateRequestTokens, estimateTokens } from "../tokens";
 import { voiceLines, type Voice } from "../voice";
 import type { ChatProvider, ChatRequest, ChatResponse } from "../types";
@@ -30,6 +31,8 @@ export type GroundedMockContext = {
   era?: { shortSha: string; date: string };
   /** The file (and line) a "file" question names. */
   file?: FileRef | null;
+  /** The visitor's question, for telling "what does this code do" apart from its history. */
+  question?: string;
 };
 
 const quote = (text: string, max = 180) => {
@@ -119,6 +122,18 @@ export function composeMockSegments(ctx: GroundedMockContext): ModelSegment[] {
       if (n) v(`${p.item.kind === "issue" ? "Issue" : "Pull request"} #${n}: ${quote(titleOf(p.item.excerpt), 120)}.`, p);
     }
     if (commits.length === 0 && pulls.length + issues.length === 0) out.push({ kind: "unknown", text: "I retrieved no recent commits, issues or pull requests to describe." });
+  } else if (intent === "file" && ctx.file && ctx.question && asksWhatCodeDoes(ctx.question)) {
+    // what a part of the code does: without a model, only what the parser knows for certain, and the code itself
+    const { path, line } = ctx.file;
+    out.push({ kind: "ghost", text: lines.bridge });
+    const code = refs.find((r) => r.item.kind === "file");
+    const inside = code && /^inside: (.*)$/m.exec(code.item.excerpt)?.[1];
+    const map = code && /^map of the file: (.*)$/m.exec(code.item.excerpt)?.[1];
+    const first = code && new RegExp(`^${line ?? "\\d+"}: (.*\\S.*)$`, "m").exec(code.item.excerpt)?.[1]?.trim();
+    if (code && inside) v(`${line ? `Line ${line} of ${path}` : path} is inside ${inside}.`, code);
+    if (code && map) v(`The map of ${path} holds: ${map.split("; ").slice(0, 6).join("; ")}.`, code);
+    if (code && first) v(`${line ? `Line ${line}` : "It"} reads ${quote(first, 140)}.`, code);
+    if (!code) out.push({ kind: "unknown", text: `I could not find ${path} in this history.` });
   } else if (intent === "file" && ctx.file) {
     // one file's story, told only from what the commits and the pull request behind them say
     const { path, line } = ctx.file;
@@ -186,6 +201,36 @@ export function composeMockSegments(ctx: GroundedMockContext): ModelSegment[] {
 
   if (gaps.length) out.push({ kind: "unknown", text: `I could not read ${gaps.map((g) => g.source).join(", ")}, so this answer may be incomplete.` });
   out.push({ kind: "ghost", text: lines.closer });
+  return ctx.stage && echoes(identityFromAssignment(ctx.assignment), ctx.stage) ? echoReply(out, refs, ctx.stage) : out;
+}
+
+/** “a viewer for old maps” … “old maps” … “maps”: one quote, said again shorter each time. Every echo is a substring of it. */
+function echoQuote(q: string, stage: Stage): string {
+  const words = q.replace(/…$/, "").split(" ");
+  const tail = (n: number) => words.slice(-n).join(" ").replace(/[.,;:!?]+$/, "");
+  const tails = stage === "distorted" ? [tail(Math.min(3, words.length))] : [tail(Math.min(3, words.length)), tail(1)];
+  return [q, ...tails.filter((t) => t && t !== q)].map((t) => `“${t}”`).join(" … ");
+}
+
+/**
+ * The changed form of a ghost that can only repeat (the Bellwraith). Quoted facts come back as echoes, and what it
+ * was for (the README's first line) or a line of its code is repeated even unasked. Unquoted facts, interpretations and
+ * stated gaps are left exactly as they were: the character never costs the reader a caveat.
+ */
+function echoReply(segments: ModelSegment[], refs: readonly EvidenceRef[], stage: Stage): ModelSegment[] {
+  const out = segments
+    .filter((s) => !(s.kind === "ghost" && s.cites?.length)) // its own performed lines (issuePerformance) are gone with its voice
+    .map((s) => (s.kind === "verified" ? { ...s, text: s.text.replace(/“([^”]+)”/, (_, q: string) => echoQuote(q, stage)) } : s));
+  const cited = new Set(out.flatMap((s) => s.cites ?? []));
+  const readme = refs.find((r) => r.item.kind === "readme" && !cited.has(r.ref));
+  const code = refs.find((r) => r.item.kind === "file" && !cited.has(r.ref));
+  // the README's first real sentence: not a heading, badge, image or tag, and at least four words
+  const purpose = readme?.item.excerpt.split(/\n+/).filter((l) => !/^\s*#/.test(l)).join("\n").split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.replace(/^[>*\s-]+/, "").trim()).find((s) => !/^[[!<]/.test(s) && s.split(/\s+/).length >= 4);
+  const row = code && /^\d+: (.*\S.*)$/m.exec(code.item.excerpt)?.[1]?.trim();
+  const repeat: ModelSegment | null = readme && purpose ? { kind: "verified", text: echoQuote(quote(purpose).slice(1, -1), stage), cites: [readme.ref] }
+    : code && row ? { kind: "verified", text: echoQuote(quote(row, 140).slice(1, -1), stage), cites: [code.ref] } : null;
+  if (repeat) out.splice(Math.min(2, out.length - 1), 0, repeat);
   return out;
 }
 

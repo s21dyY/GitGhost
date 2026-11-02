@@ -75,7 +75,7 @@ async function task(source: string, gaps: Gap[], run: () => Promise<EvidenceItem
 const dedupe = (items: EvidenceItem[]) => [...new Map(items.map((i) => [i.id, i])).values()];
 
 /** A file key for caches: path plus line range, so two questions about different lines never share evidence. */
-export const fileKey = (file?: FileRef | null) => (file ? `:${file.path}:${file.line ?? ""}-${file.endLine ?? ""}` : "");
+export const fileKey = (file?: FileRef | null) => (file ? `:${file.path}:${file.line ?? ""}-${file.endLine ?? ""}${file.whole ? ":whole" : ""}` : "");
 
 export async function retrieveEvidence(ref: RepoRef, intent: Intent, deps: RetrieveDeps = {}, file?: FileRef | null): Promise<Retrieved | RetrieveFailure> {
   const cache = deps.cache ?? sharedEvidenceCache();

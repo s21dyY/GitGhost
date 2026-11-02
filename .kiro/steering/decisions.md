@@ -1,0 +1,15 @@
+---
+inclusion: always
+---
+# GitGhost decision log
+The owner's decisions; settled unless the owner reopens them. Rules follow from these (see `project.md`).
+
+**D1 (2026-11-02) Bedrock cost policy.** The "one live call per day, separate approval per call" lockdown is cancelled. Live model calls are allowed during normal development and testing without per-call approval, because the app's own controls already bound the cost. Those controls stay and must not be weakened: server-side credentials only, the shared kill switch `KILL#bedrock`, the daily budget `GITGHOST_DAILY_BUDGET_USD` (currently 1.00), the per-client rate limit, the global concurrency lease, cost reservation and strict output validation. Limits: input 32,000 tokens (so the ghost can read whole files), output 800 tokens; the budget, not the daily request count, is the binding limit. A reply refused as a whole for its format is retried once with the reason, through the same limits and budget, and both calls are billed. The validation harness never retries, since it promises an exact call count. The V6 one-call smoke-test plan (`infra/v6`, `infra/2c2`, `docs/V6_BEDROCK.md`, `docs/NOVA_LITE_2C2.md`) is historical and kept.
+
+**D2 (2026-11-02) Quests removed.** The "Unfinished Business" / Revival Quest and the exportable brief are out of the current scope. If a quest returns, its content is designed and written by the human designer; AI never generates quest steps, rewards or progress, because generated tasks would look like grounded advice without being reviewed. The BUILD.md quest text is kept and marked deferred.
+
+**D3 (2026-11-02) Now in scope (built).** (a) First encounter: a scripted opening that reacts to how the visitor arrived, one cited fact, then an RPG choice menu; scripted so it is instant and cannot fail on stage. (b) "Possession", legacy-code explanation: the ghost's files and code in a viewer; a server-side tree-sitter outline (33 grammars, approximate fallback for others, labelled approximate); "what does this do" reads the whole file up to about 48 KB, or the focus plus a nearby skeleton for larger files; why/when questions use commits and pull requests only. (c) Five character origins, including the Bellwraith: warm as a human; once changed it can only repeat, as exact cited quotes.
+
+**D4 (2026-11-02) Evidence rules for code and AI text.** Code explanations are "interpretation" segments citing the code shown; they describe only what the code visibly does, never authors' intent, reasons or history the code does not show. Parser facts (which function lines are inside, a file's map) may be stated; an approximate outline is always labelled approximate. Content written by another AI (DeepWiki, any summarizer) is never evidence and never cited as fact in the app; DeepWiki and GitHub MCP are development tools for the builder only.
+
+**D5 (2026-11-02) Tools and disclosure.** Other AI coding tools may be used alongside Kiro. `KIRO_LOG.md` records only work actually done with Kiro. The README links a separate "Work done outside Kiro" disclosure (`DISCLOSURES.md`); its list of items is filled in by the owner, never invented.

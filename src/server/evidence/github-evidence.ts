@@ -2,6 +2,8 @@ import { z } from "zod";
 import { buildEvidence, type EvidenceItem } from "@/domain/evidence";
 import type { RepoMetadata } from "@/domain/repo";
 import { GitHubError, githubGet, githubGetWithHeaders, type GitHubDeps } from "@/server/github/client";
+import { outlineFor } from "@/server/code/outline";
+import { readingPlan } from "@/server/code/window";
 import { cleanUntrustedText } from "@/server/github/summon";
 
 /**
@@ -190,26 +192,33 @@ export async function fetchFileCommits(ctx: FetchCtx, path: string, at: string, 
   return { newest, earliest: tail.length ? commitItems(tail.slice(-1), ctx, `Earliest commit GitHub lists for ${path}`) : [] };
 }
 
-/** The code around a line (or the top of the file), with line numbers, as it stood at `at`. Untrusted text, clipped. */
-export async function fetchFileExcerpt(ctx: FetchCtx, path: string, at: string, line?: number, endLine?: number): Promise<EvidenceItem | null> {
+/**
+ * The code a question is about, as it stood at `at`, as one or more file evidence items (each part is its own
+ * citable source). The file's outline (src/server/code) plans the reading: the part asked about first, with what the
+ * parser knows for certain about it (which declaration it is inside, or the file's map); then, when `whole` (a "what
+ * does this do" question), the rest of the file in parts nearest first, or for a large file its skeleton. Those are
+ * facts about the code's shape, never about anyone's intent. Untrusted text, clipped per line.
+ */
+export async function fetchFileReading(ctx: FetchCtx, path: string, at: string, ref: { line?: number; endLine?: number }, whole = false): Promise<EvidenceItem[]> {
   const { repo, retrievedAt, deps } = ctx;
   const raw = await githubGet(`${repoPath(repo)}/contents/${encodePath(path)}?ref=${encodeURIComponent(at)}`, RawContent, deps);
-  if (raw.type !== "file" || raw.encoding !== "base64" || !raw.content || raw.size > 1_000_000) return null;
-  const lines = Buffer.from(raw.content, "base64").toString("utf8").split("\n");
-  const from = line ? Math.max(1, line - 4) : 1;
-  const to = Math.min(lines.length, line ? (endLine ?? line) + 4 : 14);
-  if (line && line > lines.length) return null;
-  const body = lines.slice(from - 1, to).map((l, i) => `${from + i}: ${cleanUntrustedText(l).replace(/\t/g, "  ").slice(0, 160)}`).join("\n");
-  return buildEvidence({
-    repoId: repo.repoId,
-    kind: "file",
-    sourceUrl: `${repo.htmlUrl}/blob/${at}/${encodePath(path)}#L${from}-L${to}`,
-    label: `${path}, lines ${from}–${to}`,
-    revisionSha: /^[0-9a-f]{40}$/.test(at) ? at : undefined,
-    retrievedAt,
-    excerpt: `${path} (lines ${from}–${to} of ${lines.length})\n${body}`.slice(0, 3000),
-    truncated: to < lines.length || from > 1,
-  });
+  if (raw.type !== "file" || raw.encoding !== "base64" || !raw.content || raw.size > 1_000_000) return [];
+  const text = Buffer.from(raw.content, "base64").toString("utf8");
+  const lines = text.split("\n").map(cleanUntrustedText);
+  if (ref.line && ref.line > lines.length) return [];
+  const parts = readingPlan(lines, await outlineFor(path, text), ref, whole, path);
+  return parts.map((p) =>
+    buildEvidence({
+      repoId: repo.repoId,
+      kind: "file",
+      sourceUrl: `${repo.htmlUrl}/blob/${at}/${encodePath(path)}#L${p.from}-L${p.to}`,
+      label: `${path}, lines ${p.from}–${p.to}${p.role === "focus" ? "" : p.role === "context" ? " (context)" : " (skeleton)"}`,
+      revisionSha: /^[0-9a-f]{40}$/.test(at) ? at : undefined,
+      retrievedAt,
+      excerpt: [`${path} (lines ${p.from}–${p.to} of ${lines.length})`, ...p.head, p.body].join("\n").slice(0, 3900),
+      truncated: p.to < lines.length || p.from > 1,
+    }),
+  );
 }
 
 /** The pull request(s) a commit arrived through: where the reasons for a change are usually written. */

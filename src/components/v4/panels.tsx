@@ -10,6 +10,22 @@ import { SCENE_PLACE } from "./scene-theme";
 import type { Form } from "./V4Ghost";
 
 const MANIFEST_LABEL: Record<Form, string> = { human: "Before the forgetting", distorted: "Gory", horror: "Eldritch" };
+/** How unsettled the ghost is in this era. Mood only: it follows the ghost's form and says nothing about the repository. */
+const DREAD: Record<Form, { lit: number; word: string }> = { human: { lit: 1, word: "Still" }, distorted: { lit: 3, word: "Restless" }, horror: { lit: 5, word: "Unbound" } };
+
+/** Dread follows the ghost's form; a living repository's ghost (domain/status.ts) is simply alive. */
+function Dread({ form, alive }: { form: Form; alive: boolean }) {
+  const d = alive && form === "human" ? { lit: 0, word: "Alive" } : DREAD[form];
+  return (
+    <p className="v4-dread" data-form={form} data-alive={(alive && form === "human") || undefined} data-testid="dread">
+      <span className="v4-dread-label">Dread</span>
+      <span className="v4-dread-pips" aria-hidden="true">
+        {[0, 1, 2, 3, 4].map((i) => <span key={i} data-lit={i < d.lit || undefined} />)}
+      </span>
+      <span className="v4-dread-word">{d.word}</span>
+    </p>
+  );
+}
 const KIND_LABEL: Record<string, string> = {
   commit: "Commit",
   readme: "README",
@@ -77,9 +93,10 @@ export function ArchiveSummary({ form, emotion, eraIdx }: { form: Form; emotion:
   return (
     <div className="v4-archive" data-testid="archive">
       <section aria-labelledby="v4-id-h">
-        <h3 id="v4-id-h" className="v4-h">Haunting <MockBadge /></h3>
+        <h3 id="v4-id-h" className="v4-h">Haunting</h3>
         <p className="v4-big" data-testid="repo-name">{g.repo.fullName}</p>
         <p className="v4-place" data-testid="place">Haunts {SCENE_PLACE[g.scene ?? "graveyard"]}</p>
+        <Dread form={form} alive={g.vitality === "alive"} />
         {g.repo.description ? <p className="v4-quiet v4-clamp">{g.repo.description}</p> : null}
         {g.repo.url ? (
           <p><a href={g.repo.url} target="_blank" rel="noopener noreferrer" className="v4-link">View on GitHub<span className="sr-only"> (opens in a new tab)</span> ↗</a></p>

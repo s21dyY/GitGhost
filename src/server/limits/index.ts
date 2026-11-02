@@ -19,6 +19,9 @@ export type Limits = {
   /** In-process gate in front of chat's GitHub retrieval. Never looser than the chat limit itself. */
   chatApi: RateLimiter;
   chatApiGlobal: RateLimiter;
+  /** Reading the ghost's code (file list and files). Looser than summoning: a visitor opens many files. */
+  codeApi: RateLimiter;
+  codeApiGlobal: RateLimiter;
   creationBudget: CreationBudget;
 };
 
@@ -40,6 +43,8 @@ export function createLimits(env: Record<string, string | undefined> = process.e
     summonApiGlobal: createRateLimiter({ limit: intFromEnv(env, "SUMMON_API_GLOBAL_LIMIT", 120, 1, 1_000_000), windowMs: 60_000, maxKeys: 1, now }),
     chatApi: createRateLimiter({ limit: intFromEnv(env, "GITGHOST_CHAT_REQUESTS_PER_MINUTE", 5, 1, 1000), windowMs: 60_000, now }),
     chatApiGlobal: createRateLimiter({ limit: intFromEnv(env, "GITGHOST_CHAT_API_GLOBAL_PER_MINUTE", 30, 1, 100_000), windowMs: 60_000, maxKeys: 1, now }),
+    codeApi: createRateLimiter({ limit: intFromEnv(env, "CODE_API_LIMIT", 60, 1, 10_000), windowMs: 60_000, now }),
+    codeApiGlobal: createRateLimiter({ limit: intFromEnv(env, "CODE_API_GLOBAL_LIMIT", 300, 1, 1_000_000), windowMs: 60_000, maxKeys: 1, now }),
     creationBudget: createCreationBudget({
       enabled: !off,
       perHour: intFromEnv(env, "IDENTITY_CREATES_PER_HOUR", 200, 0, 100_000),
@@ -55,7 +60,9 @@ type G = typeof globalThis & { [KEY]?: Limits };
 /** Process-wide singleton (survives module duplication between Next route bundles). */
 export function getLimits(): Limits {
   const g = globalThis as G;
-  return (g[KEY] ??= createLimits());
+  // A long-running dev server may hold limits built before a limiter was added: rebuild rather than crash.
+  if (!g[KEY] || !("codeApi" in g[KEY])) g[KEY] = createLimits();
+  return g[KEY];
 }
 
 /** Test helper. */

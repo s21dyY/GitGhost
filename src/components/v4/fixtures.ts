@@ -106,6 +106,69 @@ export const UNKNOWN: readonly { text: string; since: number }[] = [
 
 export const SHORTCUTS = ["Why did you die?", "What happened lately?", "What is still broken?"] as const;
 
+/** The invented repository's code, for the demo's code viewer. Invented like everything else here. */
+export const MOCK_CODE: Record<string, string> = {
+  "src/notes.js": [
+    "// A note is a line of text on a page.",
+    "const pages = new Map();",
+    "",
+    "export function write(page, text) {",
+    "  const notes = pages.get(page) ?? [];",
+    "  notes.push({ text, at: Date.now() });",
+    "  pages.set(page, notes);",
+    "  return notes.length;",
+    "}",
+    "",
+    "export function read(page) {",
+    "  return pages.get(page) ?? [];",
+    "}",
+  ].join("\n"),
+  "src/sync.js": [
+    "import { read, write } from \"./notes.js\";",
+    "",
+    "// Two lanterns hold copies of the same page. When they disagree, the newer note wins.",
+    "export function sync(local, remote, page) {",
+    "  const mine = read(page);",
+    "  const theirs = remote.read(page);",
+    "  const newest = (a, b) => ((a.at ?? 0) >= (b.at ?? 0) ? a : b);",
+    "  const merged = mine.map((note, i) => (theirs[i] ? newest(note, theirs[i]) : note));",
+    "  for (const note of theirs.slice(mine.length)) write(page, note.text);",
+    "  return merged;",
+    "}",
+  ].join("\n"),
+  "README.md": ["# lantern-notes", "", "This project is unmaintained. Forks are welcome.", "", "Notes that two lanterns can share."].join("\n"),
+};
+/** What each invented file does (the demo's scripted reading) and the invented commit that last touched it. */
+const MOCK_CODE_NOTES: Record<string, { reading: string; lastEra: number }> = {
+  "src/notes.js": { reading: "These lines keep notes in memory, page by page, and hand them back when a page is read.", lastEra: 0 },
+  "src/sync.js": { reading: "These lines merge two copies of a page and keep the newer note where they disagree.", lastEra: 2 },
+  "README.md": { reading: "This file is the project's front page; it says the project is unmaintained.", lastEra: 4 },
+};
+
+/** A question about one of the invented files: quote it, read it, or say when it last changed. Never why. */
+function mockCodeReply(question: string, path: string, eraIdx: number): ReplySegment[] {
+  const note = MOCK_CODE_NOTES[path];
+  const lines = MOCK_CODE[path].split("\n");
+  const m = new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:(\\d+)(?:-(\\d+))?`).exec(question);
+  const from = m ? Math.max(1, Number(m[1])) : 1;
+  const to = m ? Math.min(lines.length, Number(m[2] ?? m[1])) : Math.min(lines.length, 3);
+  const quoted = lines.slice(from - 1, to).find((l) => l.trim()) ?? lines[0];
+  const last = ERAS[Math.min(note.lastEra, eraIdx)];
+  if (/\bwhy\b/i.test(question)) {
+    return [
+      { kind: "record", text: `The last mock commit to touch ${path} is ${last.sha}: "${last.message}".`, cites: [last.evidenceId] },
+      { kind: "unknown", text: "No mock commit message says why it was written this way.", cites: [] },
+    ];
+  }
+  if (/\b(when|last change|which commit)\b/i.test(question)) {
+    return [{ kind: "record", text: `${path} last changed in mock commit ${last.sha} (${last.date}): "${last.message}".`, cites: [last.evidenceId] }];
+  }
+  return [
+    { kind: "record", text: `Line ${from} of ${path} reads: ${quoted.trim()}`, cites: [] },
+    { kind: "reading", text: note.reading, cites: [] },
+  ];
+}
+
 import type { Reply, ReplySegment } from "./data";
 export type { Reply, ReplySegment, SegmentKind } from "./data";
 
@@ -118,7 +181,15 @@ export function mockReply(question: string, eraIdx: number): Reply {
   const segments: ReplySegment[] = [];
   const visible = new Set(eraEvidence(eraIdx).map((e) => e.id));
   const has = (id: string) => visible.has(id);
-  if (/(why|die|dead|archiv|abandon|status|unmaintain)/.test(q)) {
+  const codePath = Object.keys(MOCK_CODE).find((p) => question.includes(p));
+  if (codePath) {
+    segments.push(...mockCodeReply(question, codePath, eraIdx));
+  } else if (/(who were you|made for|made to|what were you|purpose|begin|began|first|earliest|oldest)/.test(q)) {
+    // who it was: its oldest mock commit, and the one after it if this era has reached it
+    segments.push({ kind: "record", text: `My oldest mock commit is ${ERAS[0].sha} (${ERAS[0].date}): "${ERAS[0].message}".`, cites: [ERAS[0].evidenceId] });
+    if (has("E2")) segments.push({ kind: "record", text: `Later came ${ERAS[1].sha}: "${ERAS[1].message}".`, cites: ["E2"] });
+    segments.push({ kind: "unknown", text: "Who first wrote me, and why, is not in the evidence.", cites: [] });
+  } else if (/(why|die|dead|archiv|abandon|status|unmaintain|stop)/.test(q)) {
     segments.push({ kind: "record", text: `At this era the latest mock commit is ${era.sha}, dated ${era.date}: "${era.message}".`, cites: [era.evidenceId] });
     if (has("E8")) segments.push({ kind: "record", text: "The mock repository is marked archived, and the README says it is unmaintained.", cites: ["E8", "E7"] });
     if (eraIdx >= 3) segments.push({ kind: "reading", text: "The recent commits are repairs and removals. That is a reading of the commits, not a stated reason.", cites: ["E3", "E4"].filter(has) });

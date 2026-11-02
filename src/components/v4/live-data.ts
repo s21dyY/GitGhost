@@ -1,7 +1,7 @@
 import { HUMANS } from "@/config/entities";
 import { identityFromAssignment, type EntityAssignment } from "@/domain/entity";
 import type { SummonedRepo } from "@/domain/repo";
-import { LIVE_STATUS_LABELS } from "@/domain/status";
+import { LIVE_STATUS_LABELS, vitalityOf } from "@/domain/status";
 import type { History } from "@/server/github/history";
 import { PROVISIONAL_TEXT, type ProvisionalReason } from "@/components/entity/provisional";
 import type { EraData, EvidenceData, GameData, Observation, Reading } from "./data";
@@ -32,6 +32,7 @@ export function buildLiveData(input: {
   historyProblem?: string | null;
   ghost: GhostInfo;
   replyMode: "scripted" | "model" | "unavailable";
+  specialist?: boolean;
 }): GameData {
   const { summoned, history, ghost } = input;
   const { repo, latestCommit, readme } = summoned;
@@ -42,7 +43,9 @@ export function buildLiveData(input: {
   if (commits.length === 0 && latestCommit) {
     commits = [{ sha: latestCommit.sha, shortSha: latestCommit.sha.slice(0, 7), date: latestCommit.committedAt, headline: latestCommit.messageHeadline || "(no message)", url: latestCommit.htmlUrl }];
   }
-  const look = presentationFor(commits.map((c) => c.sha), saved, identityFromAssignment(ghost.assignment));
+  // Alive or left behind (domain/status.ts): a living repository is shown as a person, never as the decaying ghost.
+  const vitality = vitalityOf(summoned.status);
+  const look = presentationFor(commits.map((c) => c.sha), saved, identityFromAssignment(ghost.assignment), vitality);
   const eras: EraData[] = commits.map((c, i) => ({
     id: `era-${c.shortSha}`,
     sha: c.shortSha,
@@ -98,7 +101,9 @@ export function buildLiveData(input: {
     statusLine: `${label.label}. Retrieved ${day(summoned.retrievedAt)}.`,
     identity: ghost.status === "persisted" ? { state: "saved", note: null } : { state: "provisional", note: ghost.reason ? PROVISIONAL_TEXT[ghost.reason] : "This look is not saved and may change later." },
     replyMode: input.replyMode,
-    restingStage: saved,
+    specialist: input.specialist ?? false,
+    restingStage: vitality === "alive" ? "human" : saved,
+    vitality,
     eras,
     history: { complete: history?.complete ?? false, total: history?.total ?? null, note: history?.note ?? input.historyProblem ?? null },
     evidence,

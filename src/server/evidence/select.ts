@@ -29,7 +29,8 @@ const stripBadges = (text: string) =>
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 function viewOf(item: EvidenceItem): string {
-  const max = item.kind === "readme" ? 700 : item.kind === "repo-metadata" ? 400 : item.kind === "file" ? 1100 : 420;
+  // code is shown whole (each file item is already one bounded part of a file); a cut-off line could mislead
+  const max = item.kind === "readme" ? 700 : item.kind === "repo-metadata" ? 400 : item.kind === "file" ? 3900 : 420;
   // The raw excerpt (used to validate every number and word the model states) is never altered; only the view is cleaned.
   const text = item.kind === "readme" ? stripBadges(item.excerpt) : item.excerpt;
   return text.length > max ? `${text.slice(0, max)}…` : text;
@@ -70,11 +71,28 @@ function selectStatus(
   return chosen.map((c, i) => ({ ref: `E${i + 1}`, item: c.item, view: c.view }));
 }
 
+function inOrder(items: readonly EvidenceItem[], byteBudget: number, maxItems: number): EvidenceRef[] {
+  const chosen: { item: EvidenceItem; view: string }[] = [];
+  let used = 0;
+  for (const item of items) {
+    if (chosen.length >= maxItems) break;
+    const view = viewOf(item);
+    const cost = bytes(view) + 40;
+    if (used + cost > byteBudget) continue;
+    chosen.push({ item, view });
+    used += cost;
+  }
+  return chosen.map((c, i) => ({ ref: `E${i + 1}`, item: c.item, view: c.view }));
+}
+
 export function selectEvidence(
   items: readonly EvidenceItem[],
   opts: { intent: Intent; question: string; byteBudget: number; maxItems?: number },
 ): EvidenceRef[] {
   if (opts.intent === "status") return selectStatus(items, opts);
+  // A file question's evidence arrives already in reading order (see evidence/file.ts): keep it, and allow the parts of a
+  // whole file. Whatever the budget cannot hold is dropped from the end.
+  if (opts.intent === "file") return inOrder(items, opts.byteBudget, opts.maxItems ?? 40);
   const words = new Set(opts.question.toLowerCase().match(WORD) ?? []);
   // The newest commit (first commit in the list, from the base fetch) is core context for most questions.
   const newestCommit = items.find((i) => i.kind === "commit");

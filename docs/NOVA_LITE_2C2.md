@@ -1,4 +1,6 @@
 # Milestone 2C.2: Amazon Nova Lite fallback (Stage A report, Stage B and C approval packages)
+> **Historical (superseded 2026-11-02).** The one-call / separate-approval Bedrock plan described here was cancelled by the owner; see `.kiro/steering/decisions.md` (D1). Kept as a record; do not use it as the current policy.
+
 
 Date: 2026-11-01 (UTC). **Status: Stage A and B done; Stage C RUN on 2026-11-01 (section 12): exactly one Nova Lite call, answered, USD 0.000141 raw / 212 micro-dollars recorded, kill switch re-locked and verified. No further inference is authorized. Approval for Claude is not approval for Nova Lite.**
 

@@ -240,7 +240,8 @@ export async function runPlan(opts: {
     const t0 = now();
     const res = await answerQuestion(
       { owner: opts.owner, repo: opts.repo, question: call.question, history, form: call.form, headers: opts.headers },
-      { ...opts.deps, chat: { ...opts.deps.chat, onProviderError: (e) => { providerError = e; } }, observe: (e) => { exchange = e; } },
+      // the harness promises an exact number of model calls: no automatic retry of an unreadable reply
+      { ...opts.deps, retryUnreadable: false, chat: { ...opts.deps.chat, onProviderError: (e) => { providerError = e; } }, observe: (e) => { exchange = e; } },
     );
     const latencyMs = now() - t0;
     const counters = opts.counters ? await opts.counters().catch(() => ({ budgetMicros: null, requests: null })) : undefined;

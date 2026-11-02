@@ -11,7 +11,16 @@ import { checkCeilings, getPlan, PLANS } from "./validation-harness";
  * V6 readiness, offline. Nothing here can reach AWS. These tests pin the first real Bedrock smoke test:
  * the model, region, prices and ceilings are exactly the approved Nova Lite ones, the repository and question
  * are fixed, and the billable path must run as the restricted AWS profile.
+ *
+ * HISTORICAL (2026-11-02). The one-call-per-day, separately approved V6 plan was cancelled by the owner; see
+ * .kiro/steering/decisions.md (D1) and infra/v6/HISTORICAL.md. The suites that pin that plan's ceilings and runner are
+ * skipped (describe.skip), not edited to pass: they document the retired plan, and three of them fail against the
+ * runner as it now stands (its request-per-day value no longer matches the plan's ceiling of 1). The plan and runner are
+ * kept as a record, so these tests are kept too. The GITGHOST_BEDROCK_AWS_PROFILE suite checks current config code
+ * and still runs.
  */
+/** Historical V6 plan suites (decisions.md D1): kept for the record, not run. */
+const historical = describe.skip;
 const V6 = PLANS["nova-lite-v6"];
 const QUESTION = "Tell me about your past. What was this repository originally created to do?";
 const LIVE_ENV: Record<string, string> = {
@@ -35,7 +44,7 @@ const LIVE_ENV: Record<string, string> = {
   GITGHOST_USAGE_TABLE: "gitghost-usage-counters",
 };
 
-describe("the nova-lite-v6 plan", () => {
+historical("the nova-lite-v6 plan", () => {
   it("uses the approved model, region, prices and ceilings, unchanged from the earlier Nova plan", () => {
     const nova = PLANS["nova-lite"];
     expect(V6).toMatchObject({ modelId: "amazon.nova-lite-v1:0", region: "us-east-2", inputUsdPerMTok: 0.06, outputUsdPerMTok: 0.24 });
@@ -62,7 +71,7 @@ describe("the nova-lite-v6 plan", () => {
   });
 });
 
-describe("the billable path runs as the restricted profile", () => {
+historical("the billable path runs as the restricted profile", () => {
   it("the plan accepts the exact live environment", () => {
     expect(checkCeilings(LIVE_ENV, V6)).toEqual([]);
   });
@@ -107,7 +116,7 @@ describe("GITGHOST_BEDROCK_AWS_PROFILE", () => {
   });
 });
 
-describe("USD 0.02 is a safety ceiling, not permission for more requests", () => {
+historical("USD 0.02 is a safety ceiling, not permission for more requests", () => {
   it("the budget would fit 37 worst-case reservations, yet every layer allows one request", () => {
     expect(Math.floor(V6.ceilings.maxDailyBudgetMicros / 540)).toBe(37);
     expect(V6.ceilings.maxRequestsPerDay).toBe(1);
@@ -131,7 +140,7 @@ describe("USD 0.02 is a safety ceiling, not permission for more requests", () =>
   });
 });
 
-describe("the V6 runner scripts (static checks; they were not executed)", () => {
+historical("the V6 runner scripts (static checks; they were not executed)", () => {
   const read = (f: string) => readFileSync(join(process.cwd(), "infra/v6", f), "utf8");
   it("exist", () => {
     for (const f of ["v6-preflight.sh", "v6-run.sh"]) expect(existsSync(join(process.cwd(), "infra/v6", f)), f).toBe(true);

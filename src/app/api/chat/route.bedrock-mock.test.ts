@@ -244,8 +244,8 @@ describe("historical era (asOf): the model is only shown what existed then", () 
 });
 
 describe("what the browser gets when the model misbehaves", () => {
-  it("malformed JSON: 502 unverifiable_answer, nothing of the model text is returned, and the call is still billed", async () => {
-    setEnv();
+  it("malformed JSON: 502 unverifiable_answer, nothing of the model text is returned, and both calls (reply + one retry) are billed", async () => {
+    setEnv({ GITGHOST_CHAT_REQUESTS_PER_DAY: "100" }); // the unreadable reply is asked for once more
     dynamo.setFlag("KILL#bedrock", false);
     bedrock = fakeBedrock(() => reply("Sure! Here is my answer: {segments: [oops"));
     fakes.bedrock = bedrock.client;
@@ -253,7 +253,7 @@ describe("what the browser gets when the model misbehaves", () => {
     expect(r.status).toBe(502);
     expect(r.body).toMatchObject({ ok: false, code: "unverifiable_answer" });
     expect(r.text).not.toMatch(/oops|Sure!|segments/);
-    expect(requests()).toBe(1);
+    expect(requests()).toBe(2); // never more than one retry
     expect(spent()).toBeGreaterThan(0);
   });
   it("empty text and an empty segment list: both refused", async () => {

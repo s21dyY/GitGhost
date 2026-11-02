@@ -69,4 +69,20 @@ export const HUMANS: readonly HumanOrigin[] = [
     greetings: ['The door is open. That is not the same as an invitation.', 'Come within the light. Let me remember what I was.'],
     creativeNotes: 'Never imply verified security, surveillance, or actual protection based on character design.',
   },
+  {
+    id: 'bellwraith', internalName: 'The Bellwraith',
+    purposeKeywords: ['notification', 'notifications', 'notify', 'alert', 'alerts', 'alerting', 'reminder', 'reminders', 'announcement', 'announcements', 'broadcast', 'bell'],
+    signatureObject: 'A brass hand-bell with a worn wooden grip',
+    palette: ['#C59636', '#6B4C2B', '#14120D', '#ADB08A'],
+    humanVoice: 'Warm and welcoming, whatever its temperament: glad of company, calls the visitor "friend", rings a little bell to greet them.',
+    habits: ['Rings the bell once before answering', 'Warms the bell between both hands'],
+    fictionalMemory: 'An imagined bell tower at dusk. The ringer calls everyone home, and is always the last one left outside.',
+    stages: {
+      human: { silhouette: 'Tall pointed hood, long robe, hand-bell held low', face: 'Pale, kind, tired eyes', movement: 'The bell sways a little with each breath', asset: { key: 'bellwraith-human', status: 'needs-art', description: 'Hooded bell-ringer with a brass hand-bell.' } },
+      distorted: { silhouette: 'Same hood and bell; the robe is opened over the ribs', face: 'Half the face torn into a dark wound full of small teeth', movement: 'The bell rings on its own, the mouth repeats the last word', asset: { key: 'bellwraith-distorted', status: 'needs-art', description: 'Preserve hood and bell; one-sided rupture.' } },
+      transformed: { silhouette: 'Hood crowned with a spiked corona; a starry hollow in the chest', face: 'A dark hollow ringed with many eyes', movement: 'The bell tolls; everything it says comes back as an echo', asset: { key: 'bellwraith-transformed', status: 'needs-art', description: 'Many-eyed bell-bearer whose bell remains prominent.' } },
+    },
+    greetings: ['Oh, come in, friend! I rang the bell for you.', 'There you are. Come in out of the cold, friend.'],
+    creativeNotes: 'Warm only while human. Changed, it has no words of its own and can only repeat what it heard: echoes of its purpose, its code, its records. Echoes are exact quotes, never paraphrase.',
+  },
 ];

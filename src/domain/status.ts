@@ -34,3 +34,15 @@ export function deriveStatus(
   const ageDays = (now.getTime() - t) / 86_400_000;
   return ageDays > QUIET_AFTER_DAYS ? "quiet" : "active";
 }
+
+/**
+ * Whether the ghost is shown alive or dead. A storytelling convention driven by the status rule above, never a
+ * claim about why a project went quiet:
+ *  - dead:  left behind: archived, or no default-branch commit for more than QUIET_AFTER_DAYS.
+ *  - alive: committed to within QUIET_AFTER_DAYS. An unknown status is also shown alive: without evidence of
+ *           being left behind, the game never implies death.
+ */
+export type Vitality = "alive" | "dead";
+export function vitalityOf(status: RepoStatus): Vitality {
+  return status === "archived" || status === "quiet" ? "dead" : "alive";
+}
