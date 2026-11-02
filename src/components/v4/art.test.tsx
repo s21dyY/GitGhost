@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { drawVariant } from "../../../scripts/art/v4-variants.mts";
+import { drawVariant, houndJerk, variantIdleFrame } from "../../../scripts/art/v4-variants.mts";
 import { drawFrame, EXPRS, FORM_T, FORMS, IDLE, idleFrame, STATES, TRANSFORM } from "../../../scripts/art/v4-archivist.mts";
 import art from "./art.manifest.json";
 import { fragment } from "./speech";
@@ -48,10 +48,34 @@ describe("V4 character art", () => {
     const red = (c: Canvas) => c.pix.filter((p) => p && parseInt(p.slice(1, 3), 16) > 120 && parseInt(p.slice(3, 5), 16) < 60 && parseInt(p.slice(5, 7), 16) < 70).length;
     for (let i = 0; i < IDLE.frames; i++) expect(red(idleFrame(1, "neutral", i))).toBe(0);
   });
-  it("plays the idle loop only for the resting Archivist; talking and the other ghosts keep the atlas", () => {
-    expect(renderToStaticMarkup(<V4Ghost form="distorted" expr="neutral" />)).toContain("v4g-idle");
+  it("plays each ghost's own idle loop at rest; talking and other states keep the atlas", () => {
+    expect(renderToStaticMarkup(<V4Ghost form="distorted" expr="neutral" />)).toContain("/sprites/v4/idle-distorted.png");
+    expect(renderToStaticMarkup(<V4Ghost form="human" expr="neutral" sprite="hound" />)).toContain("/sprites/v4/idle-hound-human.png");
+    expect(renderToStaticMarkup(<V4Ghost form="horror" expr="neutral" sprite="watchkeeper" />)).toContain("/sprites/v4/idle-watchkeeper-horror.png");
     expect(renderToStaticMarkup(<V4Ghost form="distorted" expr="neutral" talking />)).not.toContain("v4g-idle");
-    expect(renderToStaticMarkup(<V4Ghost form="human" expr="neutral" sprite="hound" />)).not.toContain("v4g-idle");
+    expect(renderToStaticMarkup(<V4Ghost form="human" expr="neutral" sprite="hound" frame={{ kind: "atlas", state: "speak" }} />)).toContain("/sprites/v4/atlas-hound-human.png");
+  });
+  it("hound: the ears carry the expression (sad ears droop, frightened ears press flat)", () => {
+    const top = (c: Canvas) => { for (let y = 0; y < 80; y++) for (let x = 0; x < 64; x++) if (c.get(x, y)) return y; return 99; };
+    const neutral = drawVariant("hound", 0, "neutral", "idle");
+    expect(top(drawVariant("hound", 0, "melancholy", "idle"))).toBeGreaterThan(top(neutral));
+    expect(top(drawVariant("hound", 0, "disturbed", "idle"))).toBeGreaterThan(top(drawVariant("hound", 0, "melancholy", "idle")));
+  });
+  it("hound idle: fresh blood falls in the gory form, and the eldritch head snaps to a wrong angle and holds", () => {
+    const fresh = (c: Canvas) => c.pix.map((p, i) => (p === "#ff3a4e" ? i : -1)).filter((i) => i >= 0).join(",");
+    const drops = new Set(Array.from({ length: IDLE.frames }, (_, f) => fresh(variantIdleFrame("hound", 0.5, "neutral", f))));
+    expect(drops.size).toBeGreaterThanOrEqual(8); // the drops are somewhere new on most frames
+    expect(fresh(variantIdleFrame("hound", 1, "neutral", 0))).toBe(""); // the eldritch form stays bloodless
+    expect(houndJerk(1, 10).shear).toBeGreaterThan(0.2);
+    expect(houndJerk(1, 11)).toEqual(houndJerk(1, 10)); // it holds the wrong angle
+    expect(houndJerk(0, 10)).toEqual({ dx: 0, dy: 0, shear: 0 }); // the living hound moves like a dog
+  });
+  it("the Watchkeeper and the Hound ship idle loops too, and their frames really move", () => {
+    for (const kind of ["watchkeeper", "hound", "clockmaker"] as const) for (const f of FORMS) {
+      const p = png(`public/sprites/v4/idle-${kind}-${f}.png`);
+      expect([p.w, p.h]).toEqual([64 * IDLE.frames, 80 * EXPRS.length]);
+      expect(new Set(Array.from({ length: IDLE.frames }, (_, i) => grid(variantIdleFrame(kind, FORM_T[f], "neutral", i)))).size).toBeGreaterThanOrEqual(6);
+    }
   });
   it("is deterministic", () => {
     expect(grid(drawFrame(0.5, "angry", "twitchA"))).toBe(grid(drawFrame(0.5, "angry", "twitchA")));
@@ -100,7 +124,7 @@ describe("V4 character art", () => {
 });
 
 describe("the other ghosts", () => {
-  for (const kind of ["watchkeeper", "hound"] as const) {
+  for (const kind of ["watchkeeper", "hound", "clockmaker"] as const) {
     it(`${kind}: ships three form atlases and a 12-frame morph strip`, () => {
       for (const f of FORMS) expect([png(`public/sprites/v4/atlas-${kind}-${f}.png`).w, png(`public/sprites/v4/atlas-${kind}-${f}.png`).h]).toEqual([64 * 6, 80 * 6]);
       expect([png(`public/sprites/v4/transform-${kind}.png`).w, png(`public/sprites/v4/transform-${kind}.png`).h]).toEqual([64 * TRANSFORM.length, 80]);
@@ -196,7 +220,8 @@ describe("V4Ghost markup", () => {
     expect(renderToStaticMarkup(<BloodDrips form="distorted" sprite="hound" />)).toBe("");
   });
   it("draws the other ghosts from their own atlases", () => {
-    expect(renderToStaticMarkup(<V4Ghost form="distorted" expr="neutral" sprite="hound" />)).toContain("/sprites/v4/atlas-hound-distorted.png");
+    expect(renderToStaticMarkup(<V4Ghost form="distorted" expr="neutral" sprite="hound" />)).toContain("/sprites/v4/idle-hound-distorted.png");
+    expect(renderToStaticMarkup(<V4Ghost form="distorted" expr="neutral" sprite="hound" frame={{ kind: "atlas", state: "blink" }} />)).toContain("/sprites/v4/atlas-hound-distorted.png");
     expect(renderToStaticMarkup(<V4Ghost form="human" expr="neutral" sprite="watchkeeper" frame={{ kind: "transform", index: 3 }} />)).toContain("/sprites/v4/transform-watchkeeper.png");
     expect(renderToStaticMarkup(<V4Ghost form="horror" expr="neutral" sprite="hound" />)).toMatch(/aria-label="[^"]*hound/i);
   });

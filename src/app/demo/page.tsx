@@ -6,7 +6,7 @@ import { V4Game } from "@/components/v4/V4Game";
 /**
  * The offline demo: the whole game on invented data (a made-up repository), with no network and no AI.
  * It is the fallback when GitHub or AWS is unreachable. Every screen carries a Mock label, and nothing
- * here is evidence about any real repository. `?sprite=watchkeeper|hound` and `?scene=network|frontend|infra|data|comms` show the other ghosts and backdrops.
+ * here is evidence about any real repository. `?sprite=watchkeeper|hound|clockmaker` and `?scene=network|frontend|infra|data|comms` show the other ghosts and backdrops.
  */
 export const metadata = { title: "GitGhost offline demo (invented data)", robots: { index: false } };
 async function Demo({ searchParams }: { searchParams: Promise<{ sprite?: string | string[]; scene?: string | string[] }> }) {

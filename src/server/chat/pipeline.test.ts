@@ -7,6 +7,7 @@ import { createIdentityCache, createStoreBreaker } from "@/server/entity/cache";
 import { createEvidenceCache } from "@/server/evidence/retrieve";
 import { createMemoryAssignmentStore } from "@/server/storage/assignments";
 import { allVoiceLinesForTests } from "./voice";
+import { allFormLinesForTests } from "@/config/entities";
 import { answerQuestion, type PipelineDeps, type PipelineRequest } from "./pipeline";
 import { buildPrompt, neutralize } from "./prompt";
 import { fakeGitHub, issue, pull, defaultCommits } from "./test-github";
@@ -184,18 +185,20 @@ describe("human and horror voices", () => {
     expect(ghostText(human)).not.toEqual(ghostText(horror));
   });
 
-  it("human lines come from the nostalgic set and the origin's greetings; horror lines from the assigned voice", async () => {
+  it("each form speaks in its own voice: a person with a personality, a person slipping, or something that says only \"we\"", async () => {
     const a = await saveIdentity();
     const human = await ask(fakeGitHub(), { form: "human" });
-    const horror = await ask(fakeGitHub(), { form: "current" });
+    const changed = await ask(fakeGitHub(), { form: "current" });
     const origin = HUMANS.find((h) => h.id === a.originId)!;
     const voice = HORRORS.find((h) => h.id === a.voiceId)!;
-    const humanGhost = human.segments.filter((s) => s.kind === "ghost").map((s) => s.text);
-    expect(humanGhost.some((t) => origin.greetings.includes(t) || /remember|Sit with me|careful years/.test(t))).toBe(true);
-    const horrorGhost = horror.segments.filter((s) => s.kind === "ghost").map((s) => s.text);
-    expect(horrorGhost.some((t) => voice.atmosphereLines.includes(t))).toBe(true);
-    expect(horrorGhost.join(" ")).toMatch(/…/);
-    expect(humanGhost.join(" ")).not.toMatch(/…/);
+    const known = new Set([...allFormLinesForTests(), ...origin.greetings, ...voice.atmosphereLines]);
+    const ghostOf = (x: typeof human) => x.segments.filter((s) => s.kind === "ghost").map((s) => s.text);
+    const humanGhost = ghostOf(human), changedGhost = ghostOf(changed);
+    expect(humanGhost.some((t) => known.has(t))).toBe(true);
+    expect(changedGhost.some((t) => known.has(t))).toBe(true);
+    expect(humanGhost.join(" ")).not.toMatch(/…/); // a person speaks cleanly
+    if (a.currentStage === "transformed") expect(changedGhost.join(" ")).not.toMatch(/\bI\b/); // it is not a person
+    else expect(changedGhost.join(" ")).toMatch(/…/); // the person, slipping
   });
 
   it("every atmosphere line the pack can produce is digit-free, so it can never smuggle in a fact", () => {

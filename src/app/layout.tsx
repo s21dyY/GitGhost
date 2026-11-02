@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { ScreenFx } from "@/components/fx/transitions";
 import "./globals.css";
+import "./horror.css";
 
 // Self-hosted fonts (SIL Open Font License; see the OFL-*.txt files beside them). No network at build.
 const pixel = localFont({ src: "./fonts/PressStart2P-Regular.ttf", variable: "--font-pixel", display: "swap" });
@@ -35,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <a href="#main" className="skip-link">Skip to content</a>
         {children}
+        <ScreenFx />
       </body>
     </html>
   );

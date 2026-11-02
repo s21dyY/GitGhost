@@ -1,8 +1,9 @@
-import { issuePerformance, resolveEntity } from "@/config/entities";
+import { issuePerformance, resolveEntity, type Stage } from "@/config/entities";
 import { identityFromAssignment, type EntityAssignment } from "@/domain/entity";
 import type { Gap } from "@/server/evidence/retrieve";
 import type { EvidenceRef } from "@/server/evidence/select";
-import { STATUS_NOTICE_RE, type Intent } from "@/server/evidence/intent";
+import { STATUS_NOTICE_RE, type FileRef, type Intent } from "@/server/evidence/intent";
+import { REASON_RE } from "@/server/evidence/plan";
 import type { ModelSegment } from "../grounding";
 import { estimateRequestTokens, estimateTokens } from "../tokens";
 import { voiceLines, type Voice } from "../voice";
@@ -20,11 +21,15 @@ export type GroundedMockContext = {
   gaps: readonly Gap[];
   assignment: EntityAssignment;
   voice: Voice;
+  /** The form speaking (human, distorted, transformed); picks the form's own scripted voice. */
+  stage?: Stage;
   /** How many earlier user turns had the same intent; used to move on to fresh evidence. */
   variant: number;
   repo: { archived: boolean; fullName: string };
   /** Time Travel: present-day facts (the archived flag, the last push, language) are not evidence of that moment. */
   era?: { shortSha: string; date: string };
+  /** The file (and line) a "file" question names. */
+  file?: FileRef | null;
 };
 
 const quote = (text: string, max = 180) => {
@@ -53,7 +58,7 @@ function slice<T>(list: T[], variant: number, n: number): T[] {
 
 export function composeMockSegments(ctx: GroundedMockContext): ModelSegment[] {
   const { refs, intent, gaps, voice } = ctx;
-  const lines = voiceLines(ctx.assignment, voice, `${intent}:${ctx.variant}`);
+  const lines = voiceLines(ctx.assignment, voice, `${intent}:${ctx.variant}`, ctx.stage);
   const of = (kind: string) => refs.filter((r) => r.item.kind === kind);
   const meta = of("repo-metadata")[0];
   const readme = of("readme")[0];
@@ -114,6 +119,34 @@ export function composeMockSegments(ctx: GroundedMockContext): ModelSegment[] {
       if (n) v(`${p.item.kind === "issue" ? "Issue" : "Pull request"} #${n}: ${quote(titleOf(p.item.excerpt), 120)}.`, p);
     }
     if (commits.length === 0 && pulls.length + issues.length === 0) out.push({ kind: "unknown", text: "I retrieved no recent commits, issues or pull requests to describe." });
+  } else if (intent === "file" && ctx.file) {
+    // one file's story, told only from what the commits and the pull request behind them say
+    const { path, line } = ctx.file;
+    out.push({ kind: "ghost", text: lines.bridge });
+    const code = refs.find((r) => r.item.kind === "file");
+    const blame = commits.find((c) => c.item.label?.startsWith("Line "));
+    const touching = commits.filter((c) => c.item.label?.startsWith("Commit touching"));
+    const earliest = commits.find((c) => c.item.label?.startsWith("Earliest commit"));
+    const row = code && line ? new RegExp(`^${line}: (.*)$`, "m").exec(code.item.excerpt)?.[1]?.trim() : undefined;
+    if (code && row) v(`Line ${line} of ${path} reads ${quote(row, 140)}.`, code);
+    if (blame) {
+      const d = dateOf(blame.item.excerpt);
+      v(`It last changed in commit ${blame.item.revisionSha!.slice(0, 7)}, ${quote(headlineOf(blame.item.excerpt).replace(/^.*last changed by commit \w+: /, ""))}${d ? `, dated ${d}` : ""}.`, blame);
+    }
+    if (touching[0]) {
+      const d = dateOf(touching[0].item.excerpt);
+      v(`The newest change to ${path} reads ${quote(headlineOf(touching[0].item.excerpt))}${d ? `, dated ${d}` : ""}.`, touching[0]);
+    }
+    if (earliest && earliest.item.id !== touching[0]?.item.id) {
+      const d = dateOf(earliest.item.excerpt);
+      v(`The earliest commit GitHub lists for it reads ${quote(headlineOf(earliest.item.excerpt))}${d ? `, dated ${d}` : ""}.`, earliest);
+    }
+    const pr = pulls[0];
+    const why = pr ? pr.item.excerpt.replace(/^#\d+ .*?\]\s*/, "").split(/(?<=[.!?])\s+/).find((s) => REASON_RE.test(s)) : undefined;
+    if (pr) v(`It came through pull request #${numberOf(pr.item.excerpt)}, ${quote(titleOf(pr.item.excerpt), 120)}.`, pr);
+    if (pr && why) v(`That pull request says ${quote(why, 200)}`, pr);
+    if (!code && !touching.length) out.push({ kind: "unknown", text: `I could not find ${path} in this history.` });
+    else if (!why) out.push({ kind: "unknown", text: "No commit message or pull request I read says why it was written this way." });
   } else if (intent === "history") {
     out.push({ kind: "ghost", text: lines.bridge });
     const created = meta && field(meta.item.excerpt, "created on GitHub");

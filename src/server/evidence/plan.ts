@@ -1,5 +1,5 @@
 import type { EvidenceItem } from "@/domain/evidence";
-import { STATUS_NOTICE_RE, type Intent } from "./intent";
+import { STATUS_NOTICE_RE, type FileRef, type Intent } from "./intent";
 import type { EvidenceRef } from "./select";
 
 /**
@@ -19,7 +19,7 @@ export type CausePlan = { stated: boolean; ref?: string; sentence?: string };
 /** Stricter than STATUS_NOTICE_RE: "deprecat…", "replac…" and "successor" match countless ordinary issues. */
 export const STRICT_NOTICE_RE = /\b(sunset\w*|archiv\w*|no longer (maintain\w*|develop\w*|support\w*)|end of life|unmaintained|discontinu\w*|shut ?down|wind(ing)? down|abandon\w*)\b/i;
 /** Words with which a maintainer explains a decision. Used only to detect that a reason is written down. */
-const REASON_RE = /\b(because|due to|in order to|so that we|in favou?r of|to focus on|focus(ing)? on|prioriti[sz]\w*|lack of|no longer have|run out of|moving to|moved to)\b/i;
+export const REASON_RE = /\b(because|due to|in order to|so that we|in favou?r of|to focus on|focus(ing)? on|prioriti[sz]\w*|lack of|no longer have|run out of|moving to|moved to)\b/i;
 
 /** Markdown and URLs removed so a quoted sentence is plain text (links are never copied from evidence). */
 export function plainText(text: string, max = 220): string {
@@ -54,7 +54,33 @@ export function isStatusNotice(item: EvidenceItem): boolean {
 
 const ISO_DAY = /\b(\d{4}-\d{2}-\d{2})(?:T[\d:.]+Z)?/;
 
-export function keyFacts(refs: readonly EvidenceRef[], intent: Intent): KeyFact[] {
+/** A file's story, lifted word for word: the named line, the commit that last changed it, the file's newest and earliest commits, and the pull request behind them (with a reason only if one is written). */
+function fileFacts(refs: readonly EvidenceRef[], file?: FileRef | null): KeyFact[] {
+  const facts: KeyFact[] = [];
+  const headline = (r: EvidenceRef) => plainText(r.item.excerpt.replace(/\s*\(committed [^)]*\)\s*$/, "").replace(/^[^:]*last changed by commit \w+: /, ""), 160);
+  const day = (r: EvidenceRef) => ISO_DAY.exec(r.item.excerpt)?.[1];
+  const code = refs.find((r) => r.item.kind === "file");
+  const blame = refs.find((r) => r.item.kind === "commit" && r.item.label?.startsWith("Line "));
+  const touching = refs.find((r) => r.item.kind === "commit" && r.item.label?.startsWith("Commit touching"));
+  const earliest = refs.find((r) => r.item.kind === "commit" && r.item.label?.startsWith("Earliest commit"));
+  const pr = refs.find((r) => r.item.kind === "pull-request");
+  if (code && file?.line) {
+    const row = new RegExp(`^${file.line}: (.*)$`, "m").exec(code.item.excerpt)?.[1];
+    if (row !== undefined) facts.push({ ref: code.ref, text: `line ${file.line} of ${file.path} reads: "${row.trim().slice(0, 140)}"` });
+  }
+  if (blame) facts.push({ ref: blame.ref, text: `line ${file?.line ?? "?"} last changed by commit ${blame.item.revisionSha?.slice(0, 7)}${day(blame) ? ` (${day(blame)})` : ""}: "${headline(blame)}"` });
+  if (touching) facts.push({ ref: touching.ref, text: `newest commit touching ${file?.path ?? "the file"}${day(touching) ? ` (${day(touching)})` : ""}: "${headline(touching)}"` });
+  if (earliest && earliest.item.id !== touching?.item.id) facts.push({ ref: earliest.ref, text: `earliest commit GitHub lists for ${file?.path ?? "the file"}${day(earliest) ? ` (${day(earliest)})` : ""}: "${headline(earliest)}"` });
+  if (pr) {
+    facts.push({ ref: pr.ref, text: `pull request behind that commit: "${plainText(titleOf(pr.item), 160)}"` });
+    const why = sentences(pr.item.excerpt.replace(/^#\d+ .*?\]\s*/, "")).find((s) => REASON_RE.test(s));
+    if (why) facts.push({ ref: pr.ref, text: `that pull request gives a reason: "${plainText(why, 200)}"` });
+  }
+  return facts.slice(0, 7);
+}
+
+export function keyFacts(refs: readonly EvidenceRef[], intent: Intent, file?: FileRef | null): KeyFact[] {
+  if (intent === "file") return fileFacts(refs, file);
   const facts: KeyFact[] = [];
   const meta = refs.find((r) => r.item.kind === "repo-metadata");
   const readme = refs.find((r) => r.item.kind === "readme");

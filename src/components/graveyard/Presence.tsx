@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { playSfx } from "@/lib/sound";
-import { useSummon } from "./SummonProvider";
+import { originOf, useSummon } from "./SummonProvider";
 
 /**
  * An unrevealed presence. Nothing here says which repository it is or what the ghost looks like: that is learned only by
@@ -46,7 +46,7 @@ export function Presence({ href, index, total }: { href: string; index: number; 
             data-testid="presence"
             onMouseEnter={() => playSfx("hover")}
             onFocus={() => playSfx("hover")}
-            onClick={() => summon(href)}
+            onClick={(e) => summon(href, originOf(e.currentTarget))}
           >
             <Shape i={index} />
             <span className="presence-cue" aria-hidden="true">▶ approach</span>

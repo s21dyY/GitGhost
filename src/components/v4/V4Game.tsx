@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Drawer } from "@/components/encounter/Drawer";
 import { SoundToggle } from "@/components/SoundToggle";
@@ -8,6 +7,8 @@ import { playSfx } from "@/lib/sound";
 import { STAGE_LABELS } from "@/components/entity/archivist/describe";
 import { useAnimMachine, useReducedMotion } from "./anim";
 import { useArrival } from "./arrival";
+import { PixelWipe } from "@/components/fx/PixelWipe";
+import { LeaveLink } from "@/components/fx/transitions";
 import { useDevMode } from "./dev";
 import { liveAsk } from "./ask";
 import type { Ask, EvidenceData, GameData } from "./data";
@@ -70,6 +71,9 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
   const [flash, setFlash] = useState(false);
   const [corrupt, setCorrupt] = useState(false);
   const arriving = useArrival(reduced);
+  useEffect(() => {
+    if (arriving) playSfx("appear");
+  }, [arriving]);
   const [exprOverride, setExprOverride] = useState<Emotion | null>(null);
   const [status, setStatus] = useState("");
   const timers = useRef<number[]>([]);
@@ -259,7 +263,7 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
   return (
     <div className="v4" data-stage={stage} data-form={form} data-tone={tone} data-anim={anim.state} data-frozen={frozen || undefined} data-mode={g.mode} data-arrive={arriving || undefined} data-testid="v4">
       <header className="v4-top">
-        <Link href="/" className="rpg-btn !min-h-11 !px-3 !text-xs" aria-label="Back to the graveyard"><span aria-hidden="true">←<span className="v4-hide-s"> </span></span><span className="v4-hide-s" aria-hidden="true">Graveyard</span></Link>
+        <LeaveLink className="rpg-btn !min-h-11 !px-3 !text-xs" label="Back to the graveyard"><span aria-hidden="true">←<span className="v4-hide-s"> </span></span><span className="v4-hide-s" aria-hidden="true">Graveyard</span></LeaveLink>
         <p className="v4-title">GitGhost {g.mode === "mock" ? <span className="v4-quiet">demo</span> : null}</p>
         {live ? (
           <p className="v4-banner" role="note" data-testid="live-banner">
@@ -362,7 +366,12 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
         {recordIds ? <RecordsBody ids={recordIds} /> : null}
       </Drawer>
 
-      {arriving ? <div className="v4-arrive" aria-hidden="true" data-testid="v4-arrive"><span className="v4-arrive-fog" /></div> : null}
+      {arriving ? (
+        <div className="v4-arrive" aria-hidden="true" data-testid="v4-arrive">
+          <PixelWipe mode="open" pattern="spiral" ms={900} delay={150} />
+          <p className="v4-arrive-card"><span>A ghost appears</span><b>{g.ghostName}</b></p>
+        </div>
+      ) : null}
       <p className="sr-only" role="status" aria-live="polite" data-testid="v4-status">{status}</p>
       {g.mode === "mock" ? <p className="sr-only">{g.repo.fullName} is an invented repository.</p> : null}
     </div>

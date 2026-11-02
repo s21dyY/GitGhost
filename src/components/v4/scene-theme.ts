@@ -4,7 +4,7 @@
  * it says nothing about what the project is or why it stopped, and it is deterministic (same repository, same scene).
  */
 export type SceneFamily = "graveyard" | "network" | "frontend" | "infra" | "data" | "comms";
-export type SpriteKind = "archivist" | "watchkeeper" | "hound";
+export type SpriteKind = "archivist" | "watchkeeper" | "hound" | "clockmaker";
 export const SCENES: readonly SceneFamily[] = ["graveyard", "network", "frontend", "infra", "data", "comms"];
 
 type Meta = { name?: string | null; description?: string | null; language?: string | null; topics?: readonly string[] | null };
@@ -46,6 +46,7 @@ export const SCENE_PLACE: Record<SceneFamily, string> = {
 export function spriteFor(originId: string | undefined, scene: SceneFamily = "graveyard"): SpriteKind {
   if (originId === "watchkeeper") return "watchkeeper";
   if (originId === "radio-operator") return "hound";
+  if (originId === "clockmaker") return "clockmaker";
   const bySceneKind: Record<SceneFamily, SpriteKind> = { graveyard: "archivist", frontend: "archivist", data: "archivist", network: "hound", comms: "hound", infra: "watchkeeper" };
   return bySceneKind[scene];
 }

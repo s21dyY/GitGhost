@@ -1,3 +1,4 @@
+import { firstWords, type EntityIdentity } from "@/config/entities";
 import type { EraData, Stage } from "./data";
 import type { Emotion, Tone } from "./fixtures";
 
@@ -55,7 +56,12 @@ const toneFor = (stage: Stage, index: number, count: number): Tone => (stage ===
 
 export type PresentationEra = Pick<EraData, "stage" | "emotion" | "tone" | "ghostLine">;
 
-export function presentationFor(ids: readonly string[], saved: SavedStage): PresentationEra[] {
+/**
+ * `identity`, when given, makes the first words personal: the saved ghost speaks in the voice of the era's form
+ * (config/entities/voices.ts): a person with its own temperament, the person slipping, or the thing underneath.
+ * Without it (the offline demo) the generic lines above are used.
+ */
+export function presentationFor(ids: readonly string[], saved: SavedStage, identity?: EntityIdentity): PresentationEra[] {
   return ids.map((id, i) => {
     const stage = stageFor(i, ids.length, saved);
     const h = hashString(id);
@@ -63,7 +69,7 @@ export function presentationFor(ids: readonly string[], saved: SavedStage): Pres
       stage,
       emotion: EXPRESSIONS[stage][h % EXPRESSIONS[stage].length],
       tone: toneFor(stage, i, ids.length),
-      ghostLine: GHOST_LINES[stage][(h >>> 8) % GHOST_LINES[stage].length],
+      ghostLine: identity ? firstWords(identity, stage, id) : GHOST_LINES[stage][(h >>> 8) % GHOST_LINES[stage].length],
     };
   });
 }

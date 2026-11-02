@@ -1,4 +1,5 @@
 import { EncounterStage } from "@/components/encounter/EncounterStage";
+import { Peeker, ReturnWipe, Watchers } from "@/components/fx/transitions";
 import { Presence } from "@/components/graveyard/Presence";
 import { SummonForm } from "@/components/graveyard/SummonForm";
 import { SummonProvider } from "@/components/graveyard/SummonProvider";
@@ -20,11 +21,17 @@ export default function Home() {
         <div className="landing-mist landing-mist-a" aria-hidden="true" />
         <div className="landing-mist landing-mist-b" aria-hidden="true" />
         <Ambient />
+        <Watchers />
+        <Peeker />
         <div className="landing-sound"><SoundToggle /></div>
         <div className="relative z-10 mx-auto max-w-6xl px-4 pb-10 pt-20 sm:px-6 sm:pt-20">
           <header className="landing-hero text-center">
-            <h1 className="landing-title font-pixel text-3xl text-bone sm:text-5xl">GitGhost</h1>
-            <p className="font-label mt-4 text-base text-gold sm:text-lg">Every repo has a ghost.</p>
+            <h1 className="landing-title font-pixel text-3xl text-bone sm:text-5xl" data-text="GitGhost">GitGhost</h1>
+            <p className="landing-tagline font-label mt-4 text-base text-gold sm:text-lg">
+              <span className="landing-tag-a">Every repo has a ghost.</span>
+              {/* for a moment, now and then, the line is not the same line */}
+              <span className="landing-tag-b" aria-hidden="true">Every repo has <em>your</em> ghost.</span>
+            </p>
             <p className="mx-auto mt-2 max-w-xl text-base text-bone/80">
               Something is buried under every repository. Say its name, or follow a shadow.
             </p>
@@ -50,6 +57,7 @@ export default function Home() {
           </footer>
         </div>
       </main>
+      <ReturnWipe />
     </SummonProvider>
   );
 }

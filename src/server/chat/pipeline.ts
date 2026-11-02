@@ -1,6 +1,6 @@
 import type { EntityAssignment } from "@/domain/entity";
 import { parseRepoInput } from "@/domain/repo-ref";
-import { classifyIntent, intentForTurn } from "@/server/evidence/intent";
+import { classifyIntent, detectFileRef, intentForTurn } from "@/server/evidence/intent";
 import { retrieveEvidenceAsOf, type EraRetrieved } from "@/server/evidence/era";
 import { retrieveEvidence, type RetrieveDeps } from "@/server/evidence/retrieve";
 import { selectEvidence, type EvidenceRef } from "@/server/evidence/select";
@@ -89,8 +89,11 @@ export async function answerQuestion(req: PipelineRequest, deps: PipelineDeps = 
   const turn = classifyTurn(req.question);
   const variant = priorUser.filter((q) => classifyIntent(q) === intent || intentForTurn(q, []) === intent).length;
 
+  // A file named in this question, or (for a short follow-up such as "tell me more") in the latest one that named one.
+  const file = intent === "file" ? (detectFileRef(req.question) ?? [...priorUser].reverse().map(detectFileRef).find((f) => f) ?? null) : null;
+
   // 3. Evidence (bounded, selective).
-  const got = req.asOf ? await retrieveEvidenceAsOf(ref, intent, req.asOf, deps) : await retrieveEvidence(ref, intent, deps);
+  const got = req.asOf ? await retrieveEvidenceAsOf(ref, intent, req.asOf, deps, file) : await retrieveEvidence(ref, intent, deps, file);
   if (!got.ok) {
     if (got.code === "bad_era") return fail(400, "bad_request", got.message);
     if (got.code === "era_not_found") return fail(404, "era_not_found", got.message);
@@ -112,15 +115,15 @@ export async function answerQuestion(req: PipelineRequest, deps: PipelineDeps = 
   const inputCap = config.maxInputTokens;
   let history = [...req.history];
   let refs: EvidenceRef[] = [];
-  let prompt = buildPrompt({ assignment, stage, refs, gaps: got.gaps, history, question: req.question, repoName: got.repo.fullName, intent, turn, era });
+  let prompt = buildPrompt({ assignment, stage, refs, gaps: got.gaps, history, question: req.question, repoName: got.repo.fullName, intent, turn, era, file });
   const fits = (p: typeof prompt) => estimateRequestTokens(p) <= inputCap;
   const baseBytes = () => Buffer.byteLength(prompt.system, "utf8") + history.reduce((n, m) => n + Buffer.byteLength(m.content, "utf8"), 0) + Buffer.byteLength(req.question, "utf8");
   while (history.length > 0 && inputCap * 2 - baseBytes() < 1400) history = history.slice(2); // drop the oldest exchange
-  prompt = buildPrompt({ assignment, stage, refs, gaps: got.gaps, history, question: req.question, repoName: got.repo.fullName, intent, turn, era });
+  prompt = buildPrompt({ assignment, stage, refs, gaps: got.gaps, history, question: req.question, repoName: got.repo.fullName, intent, turn, era, file });
   let budget = inputCap * 2 - baseBytes() - 40 * (history.length + 2) - 200;
   for (;;) {
     refs = budget > 200 ? selectEvidence(got.items, { intent, question: req.question, byteBudget: budget }) : [];
-    prompt = buildPrompt({ assignment, stage, refs, gaps: got.gaps, history, question: req.question, repoName: got.repo.fullName, intent, turn, era });
+    prompt = buildPrompt({ assignment, stage, refs, gaps: got.gaps, history, question: req.question, repoName: got.repo.fullName, intent, turn, era, file });
     if (fits(prompt) || refs.length === 0) break;
     budget = Math.floor(budget * 0.8);
   }
@@ -134,7 +137,7 @@ export async function answerQuestion(req: PipelineRequest, deps: PipelineDeps = 
     deps.providerOverride?.(refs) ??
     (billable
       ? null
-      : createGroundedMock({ refs, intent, gaps: got.gaps, assignment, voice, variant, repo: { archived: got.repo.archived, fullName: got.repo.fullName }, era }));
+      : createGroundedMock({ refs, intent, gaps: got.gaps, assignment, voice, stage, variant, repo: { archived: got.repo.archived, fullName: got.repo.fullName }, era, file }));
 
   // 7. The existing safety pipeline: limits, budget, concurrency, timeout.
   const result = await runChat(
@@ -149,7 +152,7 @@ export async function answerQuestion(req: PipelineRequest, deps: PipelineDeps = 
   if (validated.ok) {
     const count = (k: string) => validated.segments.filter((s) => s.kind === k).length;
     const factual = count("verified") + count("interpretation");
-    const offered = keyFacts(refs, intent).length;
+    const offered = keyFacts(refs, intent, file).length;
     diagnostics.quality = {
       ghostSegments: count("ghost"), factualSegments: factual, unknownSegments: count("unknown"), keyFactsOffered: offered,
       citedRefs: [...new Set(validated.segments.flatMap((s) => s.citations.map((c) => c.ref)))], thin: turn !== "character" && offered > 0 && factual === 0,

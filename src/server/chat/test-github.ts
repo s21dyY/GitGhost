@@ -23,6 +23,12 @@ export type Scenario = {
   early?: { sha: string; message: string; date: string }[];
   repoStatus?: number;
   repoHeaders?: Record<string, string>;
+  /** Per-path history and code for file questions. `older` adds a second page whose last entry is the earliest commit. */
+  files?: Record<string, { commits: { sha: string; message: string; date: string }[]; older?: { sha: string; message: string; date: string }; content?: string }>;
+  /** GraphQL line blame for any file. */
+  blame?: { start: number; end: number; sha: string; headline: string; date: string }[];
+  /** Pull requests a commit arrived through, by commit SHA. */
+  commitPulls?: Record<string, unknown[]>;
 };
 
 export const defaultCommits = () =>
@@ -51,6 +57,26 @@ export function fakeGitHub(s: Scenario = {}) {
         stargazers_count: 10, license: { spdx_id: "MIT" }, pushed_at: "2023-03-15T10:00:00Z", created_at: "2012-05-01T00:00:00Z", topics: ["testing"],
       });
     }
+    if (p === "/graphql") {
+      const ranges = (s.blame ?? []).map((r) => ({ startingLine: r.start, endingLine: r.end, commit: { oid: r.sha, messageHeadline: r.headline, committedDate: r.date } }));
+      return j({ data: { repository: { object: { blame: { ranges } } } } });
+    }
+    if (p === `${base}/commits` && url.searchParams.has("path")) {
+      const f = s.files?.[url.searchParams.get("path")!];
+      if (!f) return j([]);
+      if (url.searchParams.has("page")) return j(f.older ? [commitJson(f.older)] : []);
+      const link: Record<string, string> = f.older ? { link: `<https://api.github.com${base}/commits?path=x&page=2>; rel="next", <https://api.github.com${base}/commits?path=x&page=2>; rel="last"` } : {};
+      return j(f.commits.map(commitJson), 200, link);
+    }
+    if (p.startsWith(`${base}/contents/`)) {
+      const path = decodeURIComponent(p.slice(`${base}/contents/`.length));
+      const content = s.files?.[path]?.content;
+      if (content === undefined) return j({ message: "Not Found" }, 404);
+      const buf = Buffer.from(content, "utf8");
+      return j({ type: "file", encoding: "base64", size: buf.length, content: buf.toString("base64"), path });
+    }
+    const pullsOf = /^\/repos\/[^/]+\/[^/]+\/commits\/([0-9a-f]{40})\/pulls$/.exec(p);
+    if (pullsOf) return j(s.commitPulls?.[pullsOf[1]] ?? []);
     if (p === `${base}/commits`) {
       if (url.searchParams.get("per_page") === "1") return commits.length ? j([commitJson(commits[0])]) : j({ message: "empty" }, 409);
       if (url.searchParams.has("until")) return j((s.early ?? [{ sha: sha(90), message: "Initial import", date: "2012-05-02T00:00:00Z" }]).map(commitJson));

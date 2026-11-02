@@ -12,3 +12,4 @@ export {
   resolveEntity,
   validateConfig,
 } from './entity-builder';
+export { TEMPERAMENT_SPEECH, allFormLinesForTests, firstWords, formLines, formVoice } from './voices';

@@ -47,12 +47,18 @@ const ALT: Record<Kind, Record<Form, string>> = {
     distorted: "A hound with a torn ear, an eye hanging on a cord, a bared row of teeth and a flank opened over its ribs.",
     horror: "A violet hound. The top of its face is a dark void with glowing eyes, another eye opens on its chest, and tendrils curl around it.",
   },
+  clockmaker: {
+    human: "An old clockmaker with grey temples, a moustache and a brass loupe over one eye, in a leather apron, holding a pocket watch in both hands.",
+    distorted: "A clockmaker whose torn cheek shows turning gears. The loupe is cracked and bleeding, a pale extra hand reaches from behind to wind the watch, and gears spill from the apron.",
+    horror: "A dark blue figure whose head is a clock face full of stars, with two fixed eyes and spinning hands. Thin jointed arms move around it, and the pocket watch glows.",
+  },
 };
 
 /** Which ghost body to draw. The Archivist is the fully polished one; the others share its forms, expressions and states. */
-export type Kind = "archivist" | "watchkeeper" | "hound";
-export const KINDS: Kind[] = ["archivist", "watchkeeper", "hound"];
+export type Kind = "archivist" | "watchkeeper" | "hound" | "clockmaker";
+export const KINDS: Kind[] = ["archivist", "watchkeeper", "hound", "clockmaker"];
 const atlasUrl = (kind: Kind, form: Form) => (kind === "archivist" ? `/sprites/v4/atlas-${form}.png` : `/sprites/v4/atlas-${kind}-${form}.png`);
+const idleUrl = (kind: Kind, form: Form) => (kind === "archivist" ? `/sprites/v4/idle-${form}.png` : `/sprites/v4/idle-${kind}-${form}.png`);
 const stripUrl = (kind: Kind) => (kind === "archivist" ? "/sprites/v4/transform.png" : `/sprites/v4/transform-${kind}.png`);
 
 export type Frame = { kind: "atlas"; state: GState } | { kind: "transform"; index: number };
@@ -74,9 +80,9 @@ function strip(kind: Kind, index: number): CSSProperties {
 }
 
 /** The authored idle loop: one row per expression, played left to right by the v4-idle keyframes in v4.css. */
-function idleLoop(form: Form, expr: Expr): CSSProperties {
+function idleLoop(kind: Kind, form: Form, expr: Expr): CSSProperties {
   return {
-    backgroundImage: `url(/sprites/v4/idle-${form}.png)`,
+    backgroundImage: `url(${idleUrl(kind, form)})`,
     backgroundSize: `calc(${IDLE_ART.frames * W} * var(--a)) calc(${EXPRS.length * H} * var(--a))`,
     backgroundPositionY: `calc(${-EXPRS.indexOf(expr) * H} * var(--a))`,
     animationDuration: `${IDLE_ART.frames * IDLE_ART.ms}ms`,
@@ -103,11 +109,11 @@ export function V4Ghost({
   const a11y = decorative ? { "aria-hidden": true as const } : { role: "img" as const, "aria-label": label ?? `${ALT[sprite][form]} Expression: ${EXPR_LABEL[expr]}.` };
   const atlas = frame.kind === "atlas";
   const resting = atlas && frame.state === "idle";
-  // The Archivist breathes, glances and blinks in its own drawn frames; the others still use the CSS bob and blink.
-  if (resting && bob && !talking && sprite === "archivist") {
+  // At rest every ghost breathes, glances and blinks in its own drawn frames (no CSS bob or blink overlay).
+  if (resting && bob && !talking) {
     return (
       <div {...a11y} className={`v4g ${className}`} data-form={form} data-expr={expr} data-frame="idle" style={{ imageRendering: "pixelated" }}>
-        <div className="v4g-layer v4g-idle" style={idleLoop(form, expr)} />
+        <div className="v4g-layer v4g-idle" style={idleLoop(sprite, form, expr)} />
       </div>
     );
   }

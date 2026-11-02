@@ -216,7 +216,7 @@ describe("which ghost body a saved identity gets", () => {
     expect(spriteFor("watchkeeper")).toBe("watchkeeper");
     expect(spriteFor("radio-operator")).toBe("hound");
     expect(spriteFor("archivist")).toBe("archivist");
-    expect(spriteFor("clockmaker")).toBe("archivist");
+    expect(spriteFor("clockmaker")).toBe("clockmaker");
     expect(spriteFor(undefined)).toBe("archivist");
   });
 });

@@ -12,7 +12,9 @@
 import { useSyncExternalStore } from "react";
 
 export const SOUND_KEY = "gitghost.sound";
-export type Sfx = "hover" | "select" | "summon" | "memory" | "transform" | "open";
+export type Sfx = "hover" | "select" | "summon" | "memory" | "transform" | "open" | "appear" | "flee" | "return";
+/** Whose voice a typed line has: the ghost in each of its forms, or the dry tick of a record. */
+export type Voice = "human" | "distorted" | "horror" | "record";
 
 type Win = typeof globalThis & { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
 
@@ -23,6 +25,7 @@ let master: GainNode | null = null;
 let ambient: { stop: () => void } | null = null;
 let ambientWanted = false;
 let lastHover = 0;
+let lastVoice = 0;
 const listeners = new Set<() => void>();
 
 const emit = () => listeners.forEach((l) => l());
@@ -128,10 +131,11 @@ export function playSfx(name: Sfx) {
   if (!enabled) return;
   switch (name) {
     case "hover": {
+      // a heartbeat: two low thumps, the second softer
       const now = Date.now();
-      if (now - lastHover < 90) return;
+      if (now - lastHover < 400) return;
       lastHover = now;
-      tones([{ f: 520, dur: 0.04, vol: 0.018 }]);
+      tones([{ f: 70, to: 48, dur: 0.09, type: "triangle", vol: 0.07 }, { f: 62, to: 44, at: 0.16, dur: 0.08, type: "triangle", vol: 0.045 }]);
       break;
     }
     case "select":
@@ -141,11 +145,30 @@ export function playSfx(name: Sfx) {
       tones([{ f: 392, dur: 0.05, vol: 0.03, type: "triangle" }, { f: 262, at: 0.05, dur: 0.09, vol: 0.03, type: "triangle" }]);
       break;
     case "summon":
+      // the encounter sting: a falling chromatic run, a hit, and a low wail under the closing dark
       tones([
-        { f: 110, to: 220, dur: 0.5, type: "sawtooth", vol: 0.035 },
-        { f: 165, to: 330, at: 0.1, dur: 0.45, type: "triangle", vol: 0.03 },
-        { f: 440, to: 880, at: 0.35, dur: 0.25, type: "square", vol: 0.02 },
+        ...[880, 831, 784, 740, 698, 659, 622, 587].map((f, i) => ({ f, at: i * 0.045, dur: 0.05, type: "square" as const, vol: 0.03 })),
+        { f: 98, at: 0.36, dur: 0.22, type: "sawtooth", vol: 0.06 },
+        { f: 104, at: 0.36, dur: 0.22, type: "sawtooth", vol: 0.04 },
+        { f: 220, to: 55, at: 0.5, dur: 0.9, type: "triangle", vol: 0.045 },
       ]);
+      break;
+    case "appear":
+      // a minor arpeggio rising into a held, wrong note
+      tones([
+        { f: 220, dur: 0.09, vol: 0.035 }, { f: 262, at: 0.09, dur: 0.09, vol: 0.035 }, { f: 330, at: 0.18, dur: 0.09, vol: 0.035 },
+        { f: 466, at: 0.27, dur: 0.5, type: "triangle", vol: 0.035 }, { f: 455, at: 0.27, dur: 0.5, type: "triangle", vol: 0.025 },
+      ]);
+      break;
+    case "flee":
+      // running steps, then the door
+      tones([
+        ...[0, 0.1, 0.2, 0.3, 0.4].map((at, i) => ({ f: i % 2 ? 140 : 160, at, dur: 0.05, type: "square" as const, vol: 0.035 })),
+        { f: 330, to: 82, at: 0.55, dur: 0.35, type: "sawtooth", vol: 0.04 },
+      ]);
+      break;
+    case "return":
+      tones([{ f: 196, dur: 0.18, type: "triangle", vol: 0.03 }, { f: 185, at: 0.2, dur: 0.4, type: "triangle", vol: 0.025 }]);
       break;
     case "memory":
       tones([{ f: 660, to: 330, dur: 0.16, type: "triangle", vol: 0.04 }, { f: 220, at: 0.12, dur: 0.14, type: "square", vol: 0.02 }]);
@@ -158,6 +181,36 @@ export function playSfx(name: Sfx) {
       ]);
       break;
     }
+  }
+}
+
+/**
+ * One syllable of typed speech, retro-RPG style. Called per revealed letter; it throttles itself so fast text
+ * does not turn into a buzz. Each form has its own voice: a tired person, something broken, something underneath.
+ */
+export function playVoice(voice: Voice, i: number) {
+  load();
+  if (!enabled) return;
+  const now = Date.now();
+  if (now - lastVoice < (voice === "record" ? 30 : 55)) return;
+  lastVoice = now;
+  const wob = [0, 14, -9, 22, 5, -15, 9][i % 7];
+  switch (voice) {
+    case "human":
+      tones([{ f: 300 + wob, dur: 0.035, vol: 0.022 }]);
+      break;
+    case "distorted":
+      // a voice that keeps catching: every so often it drops an octave and grinds
+      if (i % 9 === 4) tones([{ f: 120, to: 70, dur: 0.07, type: "sawtooth", vol: 0.03 }]);
+      else tones([{ f: 190 + wob * 2, dur: 0.035, vol: 0.024 }, { f: 197 + wob * 2, dur: 0.035, vol: 0.012, type: "sawtooth" }]);
+      break;
+    case "horror":
+      // two voices a semitone apart, low, as if more than one thing is speaking
+      tones([{ f: 98 + wob, dur: 0.06, type: "triangle", vol: 0.04 }, { f: 104 + wob, dur: 0.06, type: "triangle", vol: 0.03 }, { f: 1568, dur: 0.012, type: "sine", vol: 0.006 }]);
+      break;
+    case "record":
+      tones([{ f: 1200, dur: 0.012, vol: 0.008 }]);
+      break;
   }
 }
 

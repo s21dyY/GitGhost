@@ -52,6 +52,49 @@ export async function githubGet<T>(
   return (await githubGetWithHeaders(path, schema, deps)).data;
 }
 
+/**
+ * Line blame for one file at one commit: which commit last changed each range of lines. REST has no blame
+ * endpoint, so this is the single GraphQL request GitGhost makes. The query text is fixed here; only the
+ * repository, the commit and the file path vary, and they travel as GraphQL variables, never spliced into
+ * the query. GitHub requires a token for GraphQL, so without one this returns null and callers carry on
+ * without blame.
+ */
+const BLAME_QUERY =
+  "query($owner:String!,$name:String!,$at:String!,$path:String!){repository(owner:$owner,name:$name){object(expression:$at){... on Commit{blame(path:$path){ranges{startingLine endingLine commit{oid messageHeadline committedDate}}}}}}}";
+const BlameShape = z.object({
+  data: z.object({
+    repository: z.object({
+      object: z.object({ blame: z.object({ ranges: z.array(z.object({ startingLine: z.number().int(), endingLine: z.number().int(), commit: z.object({ oid: z.string().regex(/^[0-9a-f]{40}$/), messageHeadline: z.string(), committedDate: z.string() }) })) }).optional() }).nullable(),
+    }).nullable(),
+  }).nullable(),
+});
+export type BlameRange = { start: number; end: number; sha: string; headline: string; date: string };
+
+export async function githubBlame(v: { owner: string; name: string; at: string; path: string }, deps: GitHubDeps = {}): Promise<BlameRange[] | null> {
+  const token = deps.token ?? process.env.GITHUB_TOKEN;
+  if (!token) return null;
+  const doFetch = deps.fetch ?? globalThis.fetch;
+  const timeout = AbortSignal.timeout(TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await doFetch(`${GITHUB_API}/graphql`, {
+      method: "POST",
+      cache: "no-store",
+      signal: deps.signal ? AbortSignal.any([deps.signal, timeout]) : timeout,
+      headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "GitGhost-Kiroween2026", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ query: BLAME_QUERY, variables: v }),
+    });
+  } catch {
+    throw new GitHubError(timeout.aborted ? "timeout" : "network", timeout.aborted ? "GitHub took too long to respond." : "Could not reach GitHub.");
+  }
+  if (!res.ok) throw new GitHubError(res.status === 403 || res.status === 429 ? "rate_limited" : "upstream", `GitHub returned an error (${res.status}).`, res.status, resetFrom(res.headers));
+  const parsed = BlameShape.safeParse(await res.json().catch(() => null));
+  if (!parsed.success) throw new GitHubError("invalid_response", "GitHub returned data in an unexpected shape.");
+  const ranges = parsed.data.data?.repository?.object?.blame?.ranges;
+  if (!ranges) return null;
+  return ranges.map((r) => ({ start: r.startingLine, end: r.endingLine, sha: r.commit.oid, headline: r.commit.messageHeadline, date: r.commit.committedDate }));
+}
+
 /** Only repository paths and the issue-search path are reachable; callers never pass user URLs. */
 const allowedPath = (path: string) => path.startsWith("/repos/") || path.startsWith("/search/issues?");
 

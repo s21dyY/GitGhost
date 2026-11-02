@@ -14,7 +14,7 @@ export type GroundedAnswer = {
   segments: AnswerSegment[];
   /** Deduplicated citations in first-use order. Every URL came from the server's evidence registry. */
   sources: Citation[];
-  intent: "status" | "recent" | "history" | "issues" | "general";
+  intent: "status" | "recent" | "history" | "issues" | "general" | "file";
   form: "current" | "human";
   stage: "human" | "distorted" | "transformed";
   voice: "human" | "horror";

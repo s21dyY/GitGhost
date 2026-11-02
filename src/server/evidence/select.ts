@@ -11,6 +11,8 @@ const WEIGHTS: Record<Intent, Partial<Record<EvidenceItem["kind"], number>>> = {
   history: { "repo-metadata": 100, commit: 90, readme: 50, issue: 20 },
   issues: { "repo-metadata": 100, issue: 90, "issue-comment": 80, "pull-request": 50, readme: 30, commit: 30 },
   general: { "repo-metadata": 100, readme: 80, commit: 70, issue: 30, "pull-request": 30 },
+  // one file's story: its code, the commits that touched it and the pull request behind them, then the record
+  file: { file: 100, commit: 95, "pull-request": 90, "repo-metadata": 60, readme: 10, issue: 10 },
 };
 
 const WORD = /[a-z0-9]{4,}/g;
@@ -27,7 +29,7 @@ const stripBadges = (text: string) =>
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 function viewOf(item: EvidenceItem): string {
-  const max = item.kind === "readme" ? 700 : item.kind === "repo-metadata" ? 400 : 420;
+  const max = item.kind === "readme" ? 700 : item.kind === "repo-metadata" ? 400 : item.kind === "file" ? 1100 : 420;
   // The raw excerpt (used to validate every number and word the model states) is never altered; only the view is cleaned.
   const text = item.kind === "readme" ? stripBadges(item.excerpt) : item.excerpt;
   return text.length > max ? `${text.slice(0, max)}…` : text;
@@ -78,7 +80,9 @@ export function selectEvidence(
   const newestCommit = items.find((i) => i.kind === "commit");
   const scored = items.map((item, index) => {
     let score = WEIGHTS[opts.intent][item.kind] ?? 10;
-    if (item === newestCommit && opts.intent !== "history" && opts.intent !== "issues") score += 40;
+    if (item === newestCommit && opts.intent !== "history" && opts.intent !== "issues" && opts.intent !== "file") score += 40;
+    // for a file question the commit that last changed the named line matters most
+    if (opts.intent === "file" && item.kind === "commit" && item.label?.startsWith("Line ")) score += 30;
     if (opts.intent === "status" && STATUS_NOTICE_RE.test(item.excerpt)) score += 60;
     for (const w of item.excerpt.toLowerCase().match(WORD) ?? []) if (words.has(w)) score += 2;
     return { item, score: score - index * 0.01 };

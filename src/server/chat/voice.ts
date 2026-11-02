@@ -1,4 +1,4 @@
-import { HORRORS, HUMANS, type EntityIdentity } from "@/config/entities";
+import { HORRORS, HUMANS, allFormLinesForTests, formLines, type EntityIdentity, type Stage } from "@/config/entities";
 import { identityFromAssignment, type EntityAssignment } from "@/domain/entity";
 import { resolveEntity } from "@/config/entities";
 
@@ -24,8 +24,11 @@ function pickIndex(key: string, n: number): number {
  * Atmosphere lines taken from the entity config. They carry no digits and no links, so they pass
  * the "ghost segments make no factual claims" rule by construction (a test checks every voice).
  */
-export function voiceLines(assignment: EntityAssignment, voice: Voice, salt: string) {
+export function voiceLines(assignment: EntityAssignment, voice: Voice, salt: string, stage?: Stage) {
   const identity: EntityIdentity = identityFromAssignment(assignment);
+  // With a known form, speak in that form's own voice (config/entities/voices.ts): the person's personality,
+  // the person slipping, or the thing underneath. Without one, the older two-voice lines below.
+  if (stage) return formLines(identity, voice === "human" ? "human" : stage, `${assignment.seed}:${salt}`);
   const { origin, horror } = resolveEntity(identity);
   const key = `${assignment.seed}:${salt}`;
   if (voice === "human") {
@@ -48,4 +51,4 @@ export function voiceLines(assignment: EntityAssignment, voice: Voice, salt: str
 }
 
 export const allVoiceLinesForTests = () =>
-  HORRORS.flatMap((h) => [...h.atmosphereLines]).concat(HUMANS.flatMap((o) => [...o.greetings]), NOSTALGIC_OPENERS, NOSTALGIC_CLOSERS);
+  HORRORS.flatMap((h) => [...h.atmosphereLines]).concat(HUMANS.flatMap((o) => [...o.greetings]), NOSTALGIC_OPENERS, NOSTALGIC_CLOSERS, allFormLinesForTests());

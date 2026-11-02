@@ -4,7 +4,8 @@ import type { RepoRef } from "@/domain/repo-ref";
 import { GitHubError, type GitHubDeps } from "@/server/github/client";
 import { summonRepository } from "@/server/github/summon";
 import { fetchEarlyCommits, fetchIssueComments, fetchIssues, fetchPulls, fetchRecentCommits, type FetchCtx } from "./github-evidence";
-import { STATUS_NOTICE_RE, type Intent } from "./intent";
+import { fileEvidence } from "./file";
+import { STATUS_NOTICE_RE, type FileRef, type Intent } from "./intent";
 
 /**
  * Selective, bounded retrieval. At most 3 base calls + 4 intent calls per cold question; results
@@ -73,9 +74,12 @@ async function task(source: string, gaps: Gap[], run: () => Promise<EvidenceItem
 
 const dedupe = (items: EvidenceItem[]) => [...new Map(items.map((i) => [i.id, i])).values()];
 
-export async function retrieveEvidence(ref: RepoRef, intent: Intent, deps: RetrieveDeps = {}): Promise<Retrieved | RetrieveFailure> {
+/** A file key for caches: path plus line range, so two questions about different lines never share evidence. */
+export const fileKey = (file?: FileRef | null) => (file ? `:${file.path}:${file.line ?? ""}-${file.endLine ?? ""}` : "");
+
+export async function retrieveEvidence(ref: RepoRef, intent: Intent, deps: RetrieveDeps = {}, file?: FileRef | null): Promise<Retrieved | RetrieveFailure> {
   const cache = deps.cache ?? sharedEvidenceCache();
-  const cacheKey = `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}:${intent}`;
+  const cacheKey = `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}:${intent}${intent === "file" ? fileKey(file) : ""}`;
   const hit = cache.get(cacheKey);
   if (hit) return hit;
 
@@ -132,6 +136,10 @@ export async function retrieveEvidence(ref: RepoRef, intent: Intent, deps: Retri
       extra = [byComments, byUpdated, comments];
       break;
     }
+    case "file":
+      // one file's story; without a usable path this falls back to the general question
+      extra = file ? [await fileEvidence(ctx, file, repo.defaultBranch, gaps, gdeps)] : [await task("recent commits", gaps, () => fetchRecentCommits(ctx, 5))];
+      break;
     default:
       extra = [await task("recent commits", gaps, () => fetchRecentCommits(ctx, 5))];
   }

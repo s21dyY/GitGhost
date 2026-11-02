@@ -1,0 +1,25 @@
+{
+ "frame": {
+  "w": 64,
+  "h": 80
+ },
+ "frames": 24,
+ "ms": 180,
+ "expression": "neutral",
+ "order": [
+  "01-tendrils",
+  "02-body-fur",
+  "03-collar",
+  "04-ears",
+  "05-head",
+  "06-wounds",
+  "07-eyes-void",
+  "08-blood",
+  "09-outline"
+ ],
+ "forms": [
+  "human",
+  "distorted",
+  "horror"
+ ]
+}

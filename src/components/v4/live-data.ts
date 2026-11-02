@@ -1,5 +1,5 @@
 import { HUMANS } from "@/config/entities";
-import type { EntityAssignment } from "@/domain/entity";
+import { identityFromAssignment, type EntityAssignment } from "@/domain/entity";
 import type { SummonedRepo } from "@/domain/repo";
 import { LIVE_STATUS_LABELS } from "@/domain/status";
 import type { History } from "@/server/github/history";
@@ -42,7 +42,7 @@ export function buildLiveData(input: {
   if (commits.length === 0 && latestCommit) {
     commits = [{ sha: latestCommit.sha, shortSha: latestCommit.sha.slice(0, 7), date: latestCommit.committedAt, headline: latestCommit.messageHeadline || "(no message)", url: latestCommit.htmlUrl }];
   }
-  const look = presentationFor(commits.map((c) => c.sha), saved);
+  const look = presentationFor(commits.map((c) => c.sha), saved, identityFromAssignment(ghost.assignment));
   const eras: EraData[] = commits.map((c, i) => ({
     id: `era-${c.shortSha}`,
     sha: c.shortSha,

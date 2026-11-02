@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 
-export const EVIDENCE_KINDS = ["repo-metadata", "commit", "readme", "issue", "issue-comment", "pull-request"] as const;
+export const EVIDENCE_KINDS = ["repo-metadata", "commit", "readme", "issue", "issue-comment", "pull-request", "file"] as const;
 
 export const EvidenceItemSchema = z
   .strictObject({

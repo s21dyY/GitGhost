@@ -450,6 +450,7 @@ export type Life = {
   voidLid?: (eye: number) => number | undefined; // per-eye lid for the void and shroud eyes
   glitch?: { y0: number; y1: number; dx: number }[]; // horizontal scan-line tears, after the outline
   float?: number; // whole-figure vertical offset (the eldritch form hovers)
+  frame?: number; // the idle frame, for props that keep their own beat (a lantern, a tail); the Archivist ignores it
 };
 
 export type HeadOpts = { t: number; expr: Expr; state: State; blink?: boolean; open?: number; look?: Partial<Ex>; gazeCamera?: boolean; life?: Life };
@@ -682,13 +683,13 @@ function finish(c: Canvas, L: Look) {
 }
 
 /** Rows 0..upTo-1 rise by `by` pixels; the row at upTo stretches to close the gap (the hem stays put). */
-function lift(c: Canvas, upTo: number, by: number) {
+export function lift(c: Canvas, upTo: number, by: number) {
   if (by <= 0) return;
   for (let y = 0; y < upTo; y++) for (let x = 0; x < c.w; x++) c.set(x, y, c.get(x, y + by), c.partAt(x, y + by));
 }
 
 /** Wet blood: a bright catch-light where a run starts, a dark clotted edge on its shadow side. */
-function wetBlood(c: Canvas) {
+export function wetBlood(c: Canvas) {
   const src = c.clone();
   const isBlood = (x: number, y: number) => src.partAt(x, y) === BL;
   for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
@@ -703,24 +704,24 @@ function wetBlood(c: Canvas) {
 
 /** Moonlight from the upper left catches the top and left edges of the cloth and the hood. */
 const RIM_PARTS = [P.coat, P.hairBack, P.hairFront, P.sleeveL, TD];
-function rimLight(c: Canvas, t: number) {
+export function rimLight(c: Canvas, t: number, parts: number[] = RIM_PARTS) {
   const moon = t > 0.6 ? "#9d8ae0" : "#8fa6c8";
   const src = c.clone();
   for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
-    if (!RIM_PARTS.includes(src.partAt(x, y))) continue;
+    if (!parts.includes(src.partAt(x, y))) continue;
     if (src.partAt(x - 1, y) < 0 || src.partAt(x, y - 1) < 0) c.set(x, y, mix(src.get(x, y)!, moon, 0.38), src.partAt(x, y));
   }
 }
 
 /** Scan-line tears: a few rows of the finished frame jump sideways, outline and all. */
-function tear(c: Canvas, bands: { y0: number; y1: number; dx: number }[]) {
+export function tear(c: Canvas, bands: { y0: number; y1: number; dx: number }[]) {
   for (const { y0, y1, dx } of bands) for (let y = y0; y <= y1; y++) {
     const row = Array.from({ length: c.w }, (_, x) => [c.get(x, y), c.partAt(x, y)] as const);
     for (let x = 0; x < c.w; x++) { const [col, part] = row[x - dx] ?? [null, -1]; c.set(x, y, col, col ? part : -1); }
   }
 }
 
-function shiftY(c: Canvas, dy: number): Canvas {
+export function shiftY(c: Canvas, dy: number): Canvas {
   if (!dy) return c;
   const o = new Canvas(c.w, c.h);
   for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) { const v = c.get(x, y); if (v) o.set(x, y + dy, v, c.partAt(x, y)); }
@@ -822,7 +823,10 @@ export const TRANSFORM: TFrame[] = [
 export const IDLE = { frames: 24, ms: 180 };
 const within = (f: number, a: number, b: number) => (f >= a && f <= b ? 1 : 0);
 
-export function idleFrame(t: number, expr: Expr, f: number): Canvas {
+/** What one idle frame asks of the figure. The other ghosts (v4-variants.mts) play the same schedule. */
+export type IdlePlan = { move?: Move; blink?: boolean; look: Partial<Ex>; life: Life };
+
+export function idlePlan(t: number, expr: Expr, f: number): IdlePlan {
   const ph = (f / IDLE.frames) * Math.PI * 2;
   const base = EX[expr];
   if (t < 0.25) {
@@ -831,7 +835,7 @@ export function idleFrame(t: number, expr: Expr, f: number): Canvas {
     const look: Partial<Ex> = {};
     if (f >= 9 && f <= 13) look.pup = [-0.7, 0.1];
     if (f === 19 || f === 21) look.lid = [Math.max(0.75, base.lid[0]), Math.max(0.75, base.lid[1])];
-    return drawFrame(t, expr, "idle", { blink: f === 20, look, life: { breath, headDy: head - breath } });
+    return { blink: f === 20, look, life: { breath, headDy: head - breath, frame: f } };
   }
   if (t < 0.75) {
     const breath = within(f, 3, 8) || within(f, 13, 15);
@@ -840,14 +844,19 @@ export function idleFrame(t: number, expr: Expr, f: number): Canvas {
     if (f === 21) look.lid = [1.35, 1.35];
     const glitch = f === 11 ? [{ y0: 18, y1: 20, dx: 2 }] : f === 17 ? [{ y0: 27, y1: 28, dx: -2 }, { y0: 52, y1: 52, dx: 1 }] : undefined;
     const move = f === 11 ? { dx: 1, dy: 0, shear: 0.12 } : f === 12 ? { dx: -1, dy: 0, shear: -0.05 } : undefined;
-    return drawFrame(t, expr, "idle", { move, blink: f === 22, look, life: { breath, pulse: Math.sin(ph * 2), glitch } });
+    return { move, blink: f === 22, look, life: { breath, pulse: Math.sin(ph * 2), glitch, frame: f } };
   }
   const voidLid = (eye: number) => {
     const start = (eye * 5 + 2) % IDLE.frames;
     const k = (f - start + IDLE.frames) % IDLE.frames;
     return k === 0 || k === 1 ? 1 : k === 2 ? 0.6 : undefined;
   };
-  return drawFrame(t, expr, "idle", { life: { float: -within(f, 12, 23), sway: ph, twinkle: f, voidLid, glitch: f === 7 ? [{ y0: 14, y1: 15, dx: 2 }] : undefined } });
+  return { look: {}, life: { float: -within(f, 12, 23), sway: ph, twinkle: f, voidLid, glitch: f === 7 ? [{ y0: 14, y1: 15, dx: 2 }] : undefined, frame: f } };
+}
+
+export function idleFrame(t: number, expr: Expr, f: number): Canvas {
+  const plan = idlePlan(t, expr, f);
+  return drawFrame(t, expr, "idle", { move: plan.move, blink: plan.blink, look: plan.look, life: plan.life });
 }
 
 /* ---------- build ---------- */

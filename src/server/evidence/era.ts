@@ -5,8 +5,9 @@ import type { RepoRef } from "@/domain/repo-ref";
 import { deriveStatus } from "@/domain/status";
 import { GitHubError, githubGet, githubGetWithHeaders, type GitHubDeps } from "@/server/github/client";
 import { cleanUntrustedText, fetchReadme, lookupRepository } from "@/server/github/summon";
-import type { Intent } from "./intent";
-import { sharedEvidenceCache, type EvidenceCache, type Gap, type Retrieved, type RetrieveDeps, type RetrieveFailure } from "./retrieve";
+import { fileEvidence } from "./file";
+import type { FileRef, Intent } from "./intent";
+import { fileKey, sharedEvidenceCache, type EvidenceCache, type Gap, type Retrieved, type RetrieveDeps, type RetrieveFailure } from "./retrieve";
 
 /**
  * Time Travel retrieval: evidence as it stood at one commit.
@@ -123,10 +124,10 @@ async function task<T>(source: string, gaps: Gap[], fallback: T, run: () => Prom
 export type EraRetrieved = Retrieved & { asOf: { sha: string; shortSha: string; date: string } };
 export type EraFailure = RetrieveFailure;
 
-export async function retrieveEvidenceAsOf(ref: RepoRef, intent: Intent, asOfSha: string, deps: RetrieveDeps = {}): Promise<EraRetrieved | EraFailure> {
+export async function retrieveEvidenceAsOf(ref: RepoRef, intent: Intent, asOfSha: string, deps: RetrieveDeps = {}, file?: FileRef | null): Promise<EraRetrieved | EraFailure> {
   if (!SHA_RE.test(asOfSha)) return { ok: false, code: "bad_era", message: "That commit reference is not valid." };
   const cache: EvidenceCache = deps.cache ?? sharedEvidenceCache();
-  const cacheKey = `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}:${intent}:asof:${asOfSha}`;
+  const cacheKey = `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}:${intent}${intent === "file" ? fileKey(file) : ""}:asof:${asOfSha}`;
   const hit = cache.get(cacheKey) as EraRetrieved | undefined;
   if (hit) return hit;
 
@@ -186,6 +187,9 @@ export async function retrieveEvidenceAsOf(ref: RepoRef, intent: Intent, asOfSha
     );
     const t = threadEvidence(repo, retrievedAt, asOfMs, found, intent === "recent" ? 6 : 8);
     extra = [...t.issues, ...t.pulls];
+  } else if (intent === "file" && file) {
+    // the file as it stood at that commit; later changes and later pull requests are dropped below
+    extra = await fileEvidence({ repo, retrievedAt, deps: gdeps }, file, asOfSha, gaps, gdeps);
   }
 
   const items = dropFuture([...new Map([meta, ...(readmeItem ? [readmeItem] : []), ...base, ...extra].map((i) => [i.id, i])).values()], asOfMs);

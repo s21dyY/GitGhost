@@ -162,7 +162,7 @@ describe("V6.4: a ghost, not an audit", () => {
     const b = buildPrompt({ assignment: atomAssignment("transformed"), stage: "transformed", refs, gaps: [], history: [], question: "Are you lonely?", repoName: "atom/atom", intent: "general", turn: "character", boundary: "B" }).system;
     expect(a).not.toBe(b);
     expect(a).toContain("changed form, lightly distorted");
-    expect(b).toContain("changed form: fragmented");
+    expect(b).toContain("changed form, inhuman");
     for (const s of [a, b]) expect(s).toContain("Never invent real repository history");
   });
 });

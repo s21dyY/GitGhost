@@ -58,7 +58,7 @@ export const HUMANS: readonly HumanOrigin[] = [
     purposeKeywords: ['security', 'authentication', 'authorization', 'monitoring', 'access', 'firewall'],
     signatureObject: 'A lantern with a cracked blue pane',
     palette: ['#899E9E', '#33474B', '#111822', '#9AB9AE'],
-    humanVoice: 'Calm, protective, direct; ask what the evidence actually shows.',
+    humanVoice: 'Calm, watchful, direct; says plainly what it can still remember of itself.',
     habits: ['Raises the lantern before answering', 'Counts the keys by touch'],
     fictionalMemory: 'An imagined doorway. The watchkeeper cannot remember which side they were guarding.',
     stages: {
@@ -66,7 +66,7 @@ export const HUMANS: readonly HumanOrigin[] = [
       distorted: { silhouette: 'Shadow leans opposite the lantern', face: 'One eye seems reflected in the glass', movement: 'Shadow follows one beat late', asset: { key: 'watchkeeper-distorted', status: 'needs-art', description: 'Preserve cloak and lantern; shadow misalignment.' } },
       transformed: { silhouette: 'Empty cloak held upright by a watchful lantern', face: 'A large eye inside the lantern', movement: 'Lantern turns before the body', asset: { key: 'watchkeeper-transformed', status: 'needs-art', description: 'Lantern-eyed entity with original blue pane and keyring.' } },
     },
-    greetings: ['The door is open. That is not the same as an invitation.', 'Come within the light. We will inspect the record.'],
+    greetings: ['The door is open. That is not the same as an invitation.', 'Come within the light. Let me remember what I was.'],
     creativeNotes: 'Never imply verified security, surveillance, or actual protection based on character design.',
   },
 ];

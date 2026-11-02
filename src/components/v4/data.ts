@@ -53,7 +53,7 @@ export type GameData = {
   /** Fictional archetype from the saved identity, for example "The Archivist". */
   archetype: string;
   /** Which drawn body the ghost wears. Chosen from the saved identity, never rerolled. Defaults to the Archivist. */
-  sprite?: "archivist" | "watchkeeper" | "hound";
+  sprite?: "archivist" | "watchkeeper" | "hound" | "clockmaker";
   /** Cosmetic backdrop family chosen from the repository metadata (scene-theme.ts). Defaults to the old graveyard. */
   scene?: "graveyard" | "network" | "frontend" | "infra" | "data" | "comms";
   /** Plain statement of the repository's status as retrieved, or a fixture notice. */

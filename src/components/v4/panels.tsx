@@ -17,6 +17,7 @@ const KIND_LABEL: Record<string, string> = {
   "pull-request": "Pull request",
   "issue-comment": "Issue comment",
   "repo-metadata": "Repository record",
+  file: "Code",
 };
 
 /** The honesty marker: shown on every screen that carries invented data, and nowhere else. */

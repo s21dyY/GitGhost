@@ -702,15 +702,18 @@ body {
   .spirit-figure, .spirit-veil { transition: none !important; }
 }
 
-/* --- summoning: fog rises, the lantern gutters, the dark closes --- */
-.summon-veil { position: fixed; inset: 0; z-index: 200; background: #000; opacity: 0; animation: summon-dark 0.9s steps(9) forwards; overflow: hidden; }
-@keyframes summon-dark { 0% { opacity: 0; } 30% { opacity: 0.45; } 100% { opacity: 1; } }
-.summon-fog { position: absolute; left: -20%; right: -20%; height: 55%; background: radial-gradient(ellipse at 50% 60%, rgba(150, 180, 190, 0.5), transparent 70%); animation: summon-fog 0.9s ease-out forwards; }
-.summon-fog-a { bottom: -12%; } .summon-fog-b { bottom: -34%; animation-delay: 0.12s; }
-@keyframes summon-fog { from { transform: translateY(45%); opacity: 0; } to { transform: translateY(-35%); opacity: 1; } }
-.summon-lamp { position: absolute; left: 50%; top: 46%; width: 240px; height: 240px; margin: -120px 0 0 -120px; background: radial-gradient(circle, rgba(255, 200, 110, 0.6), transparent 65%); animation: summon-lamp 0.9s steps(1) forwards; }
-@keyframes summon-lamp { 0% { opacity: 0; } 10% { opacity: 1; } 20% { opacity: 0.3; } 30% { opacity: 1; } 45% { opacity: 0.15; } 55% { opacity: 0.8; } 70% { opacity: 0.1; } 85% { opacity: 0.4; } 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .summon-veil { display: none; } }
+/* --- summoning, as a retro RPG encounter: jolt, red flash, the dark closes in on it, its eyes, a line --- */
+.summon-veil { position: fixed; inset: 0; z-index: 200; overflow: hidden; }
+.summon-flash { position: absolute; inset: 0; background: #8a0612; opacity: 0; mix-blend-mode: screen; animation: summon-flash 0.36s steps(1) forwards; }
+@keyframes summon-flash { 0% { opacity: 0.55; } 16% { opacity: 0; } 33% { opacity: 0.4; } 50% { opacity: 0; } 66% { opacity: 0.2; } 100% { opacity: 0; } }
+.summon-eyes { position: absolute; z-index: 2; display: flex; gap: 22px; transform: translate(-50%, -60%); opacity: 0; animation: summon-eyes 1.5s steps(1) forwards; }
+.summon-eyes i { display: block; width: 12px; height: 12px; background: #ff2236; box-shadow: 0 0 14px 4px rgba(255, 30, 50, 0.6); }
+@keyframes summon-eyes { 0%, 62% { opacity: 0; } 63%, 70% { opacity: 1; } 71%, 73% { opacity: 0; } 74%, 100% { opacity: 1; } }
+.summon-caption { animation: fx-caption-in 1.5s steps(1) forwards; }
+@keyframes fx-caption-in { 0%, 72% { opacity: 0; } 73%, 100% { opacity: 1; } }
+html[data-fx="shake"] .landing { animation: fx-shake 0.4s steps(8); }
+@keyframes fx-shake { 0% { transform: translate(6px, -3px); } 25% { transform: translate(-7px, 4px); } 50% { transform: translate(5px, 2px); } 75% { transform: translate(-3px, -2px); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .summon-veil { display: none; } html[data-fx="shake"] .landing { animation: none; } }
 
 /* the ghosts fade into the fog at their feet; no hard rectangle around them */
 .spirit-veil { display: none; }
@@ -743,3 +746,4 @@ body {
   .presence-cue { opacity: 0.9; }
 }
 @media (prefers-reduced-motion: reduce) { .presence-drift, .presence-face, .presence-eye { animation: none !important; } .presence-btn svg, .presence-cue { transition: none !important; } }
+

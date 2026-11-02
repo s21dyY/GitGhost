@@ -6,6 +6,7 @@ import { EMOTION_LABEL, type Emotion } from "./fixtures";
 import { useDevMode } from "./dev";
 import { useGame } from "./game-context";
 import { CiteChip, MockBadge } from "./panels";
+import { playVoice } from "@/lib/sound";
 import { fragment } from "./speech";
 import { useReveal } from "./typewriter";
 import { V4Ghost, type Form, type Frame } from "./V4Ghost";
@@ -35,16 +36,26 @@ type Prepared = { seg: ReplySegment; visual: string; holds: number[]; start: num
  * the screen-reader text stays whole. Records, readings and gaps are clean, in their own slip, and never
  * change shape: the horror is in the voice, not in the facts.
  */
-function Typed({ segments, animate, resetKey, onDone, onCite, sources }: { segments: ReplySegment[]; animate: boolean; resetKey: string | number; onDone?: () => void; onCite: (ids: string[]) => void; sources?: string[] }) {
+function Typed({ segments, animate, resetKey, onDone, onCite, sources, voice }: { segments: ReplySegment[]; animate: boolean; resetKey: string | number; onDone?: () => void; onCite: (ids: string[]) => void; sources?: string[]; voice: Form }) {
   const dev = useDevMode();
   const seed = typeof resetKey === "number" ? resetKey : resetKey.length;
   const prepared = useMemo<Prepared[]>(() => {
-    const parts = segments.map((seg, i) => (seg.kind === "ghost" ? fragment(seg.text, seed + i) : { visual: seg.text, holds: [] as number[] }));
+    // How much the on-screen text breaks follows the form: a person speaks cleanly, the changed form stutters,
+    // and the thing underneath mostly loops its own words (written into the line) with only a few breaks.
+    const breakage = voice === "human" ? 0 : voice === "distorted" ? 1 : 0.5;
+    const parts = segments.map((seg, i) => (seg.kind === "ghost" ? fragment(seg.text, seed + i, breakage) : { visual: seg.text, holds: [] as number[] }));
     return segments.map((seg, i) => ({ seg, visual: parts[i].visual, holds: parts[i].holds, start: parts.slice(0, i).reduce((a, p) => a + p.visual.length, 0) }));
-  }, [segments, seed]);
+  }, [segments, seed, voice]);
   const total = prepared.reduce((a, p) => a + p.visual.length, 0);
   const holds = useMemo(() => prepared.flatMap((p) => (p.holds.length ? p.holds : Array(p.visual.length).fill(0))), [prepared]);
   const { n, done, skip } = useReveal(total, animate, resetKey, holds);
+  // Retro speech: each letter that appears makes a sound, in the ghost's voice or the dry tick of a record.
+  useEffect(() => {
+    if (!animate || n === 0 || n > total) return;
+    const at = prepared.findLast((p) => p.start < n);
+    const ch = at?.visual[n - 1 - at.start] ?? "";
+    if (/[\p{L}\p{N}]/u.test(ch)) playVoice(at!.seg.kind === "ghost" ? voice : "record", n);
+  }, [n, animate, total, prepared, voice]);
   useEffect(() => {
     if (animate && done) onDone?.();
   }, [animate, done, onDone]);
@@ -170,7 +181,7 @@ export function Dialogue({
           <div ref={logRef} className="v4-log" role="log" aria-live="off" tabIndex={0} aria-label="Conversation" data-testid="v4-log">
             {items.length === 0 ? (
               <div className="v4-turn">
-                <Typed segments={[{ kind: "ghost", text: greeting, cites: [] }]} animate={!reduced} resetKey={era?.id ?? "none"} onCite={onCite} />
+                <Typed segments={[{ kind: "ghost", text: greeting, cites: [] }]} animate={!reduced} resetKey={era?.id ?? "none"} onCite={onCite} voice={form} />
                 {era && dev ? (
                   <p className="v4-line v4-fact" data-kind="record">
                     <Tag cls="tag-record">Record</Tag>
@@ -186,7 +197,7 @@ export function Dialogue({
                 if (!e) return null;
                 return (
                   <div key={it.id} className="v4-turn v4-travel" data-testid="travel-mark">
-                    <Typed segments={[{ kind: "ghost", text: e.ghostLine, cites: [] }]} animate={!reduced && lastItem === it && idx === items.length - 1} resetKey={it.id} onCite={onCite} />
+                    <Typed segments={[{ kind: "ghost", text: e.ghostLine, cites: [] }]} animate={!reduced && lastItem === it && idx === items.length - 1} resetKey={it.id} onCite={onCite} voice={form} />
                   </div>
                 );
               }
@@ -195,7 +206,7 @@ export function Dialogue({
                 <div key={`t${t.id}`} className="v4-turn">
                   <p className="v4-you"><span className="sr-only">You: </span><span className="v4-speaker v4-speaker-you" aria-hidden="true">You</span><span className="v4-you-text">{t.q}</span>{dev || t.eraIdx < g.eras.length - 1 ? <span className="v4-asof"> · {g.eras[t.eraIdx]?.sha ?? "now"}</span> : null}</p>
                   <p className="v4-speaker v4-speaker-ghost" aria-hidden="true">{g.ghostName}</p>
-                  <Typed segments={t.reply.segments} animate={revealId === t.id && !reduced} resetKey={t.id} onDone={() => onRevealDone(t.id)} onCite={onCite} sources={t.reply.sources} />
+                  <Typed segments={t.reply.segments} animate={revealId === t.id && !reduced} resetKey={t.id} onDone={() => onRevealDone(t.id)} onCite={onCite} sources={t.reply.sources} voice={form} />
                   {dev && t.id !== revealId ? <ReplyNote reply={t.reply} /> : null}
                   {lastItem === it && t.id !== revealId && !busy ? <span className="v4-next" aria-hidden="true">▼</span> : null}
                 </div>
@@ -215,7 +226,7 @@ export function Dialogue({
           <form onSubmit={submit} className="v4-form">
             <div className="v4-askrow">
               <label htmlFor={`${uid}-q`} className="sr-only">Your question</label>
-              <input id={`${uid}-q`} ref={inputRef} className="rpg-input" value={draft} maxLength={200} autoComplete="off" placeholder={past ? "Ask about this era…" : "Ask in your own words…"} onChange={(e) => onDraft(e.target.value)} />
+              <input id={`${uid}-q`} ref={inputRef} className="rpg-input" value={draft} maxLength={200} autoComplete="off" placeholder={past ? "Ask about this era, or about a file…" : "Ask in your own words… or about a file, like src/app.js:12"} onChange={(e) => onDraft(e.target.value)} />
               <button type="submit" className="rpg-btn rpg-btn-primary" disabled={busy || !draft.trim()}>Ask</button>
             </div>
             {dev ? <p className="v4-hint">{g.mode === "mock" ? "Scripted mock replies from fixtures. No AI model is called." : g.replyMode === "model" ? "Replies are written by an AI model and checked against GitHub sources." : g.replyMode === "unavailable" ? "Replies are unavailable: chat is not configured on this server." : "Replies are scripted from real GitHub evidence. No AI model is called."}</p> : null}

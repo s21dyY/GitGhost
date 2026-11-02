@@ -41,6 +41,21 @@ describe("sound", () => {
     expect(s.isSoundOn()).toBe(false);
   });
 
+  it("typed speech has a voice, silent until sound is on, and throttles itself", async () => {
+    const { Ctx, created } = fakeAudio();
+    vi.stubGlobal("window", fakeWindow(Ctx));
+    const s = await import("./sound");
+    s.playVoice("human", 0);
+    expect(created).toEqual([]);
+    s.setSound(true);
+    const before = created.length;
+    s.playVoice("horror", 1);
+    expect(created.length).toBeGreaterThan(before);
+    const after = created.length;
+    s.playVoice("horror", 2); // same instant: throttled
+    expect(created.length).toBe(after);
+  });
+
   it("is silent until the player turns sound on", async () => {
     const { Ctx, created } = fakeAudio();
     vi.stubGlobal("window", fakeWindow(Ctx));
@@ -88,8 +103,10 @@ describe("sound", () => {
     s.setSound(true);
     const base = created.length;
     s.playSfx("hover");
+    const one = created.length - base;
+    expect(one).toBeGreaterThan(0);
     s.playSfx("hover");
     s.playSfx("hover");
-    expect(created.length - base).toBe(1);
+    expect(created.length - base).toBe(one); // a heartbeat, not a buzz
   });
 });

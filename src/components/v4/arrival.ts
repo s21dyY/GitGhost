@@ -4,11 +4,11 @@ import { useEffect, useSyncExternalStore } from "react";
 
 /**
  * "Arriving from a summoning": the landing page sets a one-time sessionStorage flag just before it navigates. The
- * first client render reads and clears it, the arrival lasts about 1.3 s, then it ends. A refresh or a direct visit
+ * first client render reads and clears it, the arrival lasts about 1.8 s, then it ends. A refresh or a direct visit
  * has no flag, so nothing plays. Reduced motion never plays it.
  */
 export const ARRIVE_KEY = "gitghost.arrive";
-const LENGTH_MS = 1300;
+const LENGTH_MS = 1800;
 let state: "unread" | "arriving" | "done" = "unread";
 const subs = new Set<() => void>();
 const subscribe = (cb: () => void) => {
