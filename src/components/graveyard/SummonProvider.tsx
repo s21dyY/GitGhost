@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { useReducedMotion } from "@/components/v4/anim";
-import { ARRIVE_KEY } from "@/components/v4/arrival";
-import { rememberVia, type Via } from "@/components/v4/encounter";
+import { useReducedMotion } from "@/components/game/anim";
+import { ARRIVE_KEY } from "@/components/game/arrival";
+import { rememberVia, type Via } from "@/components/game/encounter";
 import { PixelWipe } from "@/components/fx/PixelWipe";
 import { playSfx } from "@/lib/sound";
 

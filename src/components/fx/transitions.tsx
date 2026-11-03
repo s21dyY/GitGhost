@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useReducedMotion } from "@/components/v4/anim";
+import { useReducedMotion } from "@/components/game/anim";
 import { playSfx } from "@/lib/sound";
 import { PixelWipe } from "./PixelWipe";
 

@@ -179,7 +179,7 @@ describe("the nova-lite plan: model, region, prices and limits are pinned", () =
 });
 
 describe("the runner script sets exactly the approved live environment", () => {
-  const run = readFileSync(join(process.cwd(), "infra/2c2/nova-run.sh"), "utf8");
+  const run = readFileSync(join(process.cwd(), "infra/history/2c2/nova-run.sh"), "utf8");
   it("fixes the output cap at 500 with no environment override, and keeps every other approved limit", () => {
     expect(run).toMatch(/^OUTTOK=500$/m);
     expect(run).not.toContain("NOVA_MAX_OUTPUT_TOKENS");

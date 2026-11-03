@@ -2,21 +2,19 @@ import { headers } from "next/headers";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { parseRepoInput } from "@/domain/repo-ref";
-import { RepoError, RepoLoading, RepoView } from "@/components/repo/RepoView";
-import { buildLiveData } from "@/components/v4/live-data";
-import { V4Game } from "@/components/v4/V4Game";
+import { RepoError, RepoLoading } from "@/components/repo/RepoStatus";
+import { buildLiveData } from "@/components/game/live-data";
+import { Game } from "@/components/game/Game";
 import { preflightChat } from "@/server/chat/service";
 import { specialistReadiness } from "@/server/specialist/config";
 import { GitHubError } from "@/server/github/client";
 import { fetchHistoryCached, type History } from "@/server/github/history";
-import type { GhostView } from "@/components/entity/GhostPanel";
 import { resolveEntityForRepo } from "@/server/entity/resolve";
 import { summonRepository } from "@/server/github/summon";
 import { clientKeyFromHeaders, getLimits } from "@/server/limits";
 
-async function Seance({ params, searchParams }: { params: Promise<{ owner: string; repo: string }>; searchParams: Promise<{ ui?: string | string[] }> }) {
+async function Seance({ params }: { params: Promise<{ owner: string; repo: string }> }) {
   const { owner, repo } = await params;
-  const classic = (await searchParams).ui === "classic";
   const input = `${owner}/${repo}`;
   const ref = parseRepoInput(input);
   if (!ref.ok) {
@@ -42,36 +40,25 @@ async function Seance({ params, searchParams }: { params: Promise<{ owner: strin
     return <RepoError title={title} error={result.error} input={input} />;
   }
   const entity = await resolveEntityForRepo(result.data.repo, { clientKey });
-  const ghost: GhostView =
-    entity.status === "error"
-      ? { status: "error", message: entity.message }
-      : entity.status === "provisional"
-        ? { status: "provisional", assignment: entity.assignment, reason: entity.reason }
-        : { status: "persisted", assignment: entity.assignment };
-  if (!classic) {
-    // The V4 game is the main experience. The classic screen stays reachable at ?ui=classic.
-    if (ghost.status === "error") return <RepoError title="Ghost unavailable" error={{ code: "stored_invalid", message: ghost.message }} />;
-    let history: History | null = null;
-    let historyProblem: string | null = null;
-    try {
-      history = await fetchHistoryCached(result.data.repo);
-    } catch (err) {
-      historyProblem = `The commit history could not be loaded (${err instanceof GitHubError ? err.message : "unexpected error"}). Only the latest commit is shown, if it was read.`;
-    }
-    const pre = preflightChat(process.env, () => undefined);
-    const replyMode = pre.ok ? (pre.config.provider === "bedrock" ? "model" : "scripted") : "unavailable";
-    return <V4Game data={buildLiveData({ summoned: result.data, history, historyProblem, ghost, replyMode, specialist: specialistReadiness().ok })} />;
+  if (entity.status === "error") return <RepoError title="Ghost unavailable" error={{ code: "stored_invalid", message: entity.message }} />;
+  let history: History | null = null;
+  let historyProblem: string | null = null;
+  try {
+    history = await fetchHistoryCached(result.data.repo);
+  } catch (err) {
+    historyProblem = `The commit history could not be loaded (${err instanceof GitHubError ? err.message : "unexpected error"}). Only the latest commit is shown, if it was read.`;
   }
-  // Debug controls and internal IDs are shown only by `next dev`, never in production builds.
-  const devTools = process.env.NODE_ENV === "development";
-  return <RepoView data={result.data} ghost={ghost} devTools={devTools} />;
+  const pre = preflightChat(process.env, () => undefined);
+  const replyMode = pre.ok ? (pre.config.provider === "bedrock" ? "model" : "scripted") : "unavailable";
+  const ghost = entity.status === "provisional" ? { status: "provisional" as const, assignment: entity.assignment, reason: entity.reason } : { status: "persisted" as const, assignment: entity.assignment };
+  return <Game data={buildLiveData({ summoned: result.data, history, historyProblem, ghost, replyMode, specialist: specialistReadiness().ok })} />;
 }
 
-export default function RepoPage({ params, searchParams }: PageProps<"/repo/[owner]/[repo]">) {
+export default function RepoPage({ params }: PageProps<"/repo/[owner]/[repo]">) {
   return (
     <main id="main">
       <Suspense fallback={<RepoLoading />}>
-        <Seance params={params} searchParams={searchParams} />
+        <Seance params={params} />
       </Suspense>
     </main>
   );

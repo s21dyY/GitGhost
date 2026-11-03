@@ -7,7 +7,7 @@ import { maxRequestCostMicros } from "./spend";
 /** The prepared (not applied) limit profiles for development and demo use. Offline: nothing is loaded or run. */
 const read = (f: string) => {
   const env: Record<string, string> = {};
-  for (const line of readFileSync(join(process.cwd(), "infra/v6/profiles", f), "utf8").split("\n")) {
+  for (const line of readFileSync(join(process.cwd(), "infra/history/v6/profiles", f), "utf8").split("\n")) {
     const m = /^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line);
     if (m) env[m[1]] = m[2];
   }

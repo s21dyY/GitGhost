@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The Specialist (deep code analysis): add TWO statements to the restricted role's inline policy gitghost-2c2-smoke,
 # allowing Claude Sonnet 5.5 ONLY through the us.anthropic.claude-sonnet-5-5 inference profile (and its underlying
-# model in us-east-1, us-east-2, us-west-2 ONLY via that profile). Same safeguards as ../2c2/nova-iam-update.sh.
+# model in us-east-1, us-east-2, us-west-2 ONLY via that profile). Same safeguards as ../history/2c2/nova-iam-update.sh.
 # NOT TO BE RUN WITH --apply WITHOUT SEPARATE OWNER APPROVAL.
 #
 #   ./specialist-iam-update.sh              dry run: validates and prints the plan, changes nothing
@@ -38,7 +38,7 @@ case "$CALLER" in
 esac
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 render() { sed "s/__ACCOUNT_ID__/$ACCOUNT_ID/g" "$1" > "$2"; chmod 600 "$2"; }
-render ../2c2/permissions-policy-nova.json.tmpl "$OUT/policy-previous.json"
+render ../history/2c2/permissions-policy-nova.json.tmpl "$OUT/policy-previous.json"
 render permissions-policy-specialist.json.tmpl "$OUT/policy-new.json"
 json_equal() { python3 - "$1" "$2" <<'PY'
 import json, sys

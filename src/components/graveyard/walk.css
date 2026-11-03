@@ -1,6 +1,6 @@
 /*
  * The graveyard game (home screen): the walkable field and its HUD. Same window language and palette as the encounter
- * (src/components/v4/v4.css): warm black, worn bone, candle gold, blood red; hard pixel edges, no rounded corners.
+ * (src/components/game/game.css): warm black, worn bone, candle gold, blood red; hard pixel edges, no rounded corners.
  */
 .game {
   --void: #050304; --frame: #a69d8b; --blood: #8e0f1f; --blood-text: #ff5866; --g-bone: #e2d8c3; --g-bone-dim: #a99f8b; --g-gold: #d0a95f;

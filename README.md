@@ -1,6 +1,6 @@
 # GitGhost
 
-Every repo has a ghost. A retro-horror graveyard of real public GitHub repositories. Work in progress for Kiroween 2026; see `BUILD.md` for the plan and `KIRO_LOG.md` for what has actually been built and verified.
+Every repo has a ghost. A retro-horror graveyard of real public GitHub repositories. Work in progress for Kiroween 2026; see [the original plan](docs/history/BUILD.md) and `KIRO_LOG.md` for what has actually been built and verified.
 
 ## Run locally
 

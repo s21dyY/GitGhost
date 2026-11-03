@@ -1,0 +1,951 @@
+/*
+ * The game's styles. Everything is scoped under .gg (and gg-* classes) so nothing leaks into the graveyard screen.
+ *
+ * Pixel system
+ *   --a   scene art pixel: 3px phone, 4px laptop, 5px large desktop. Whole numbers only.
+ *   --u   UI pixel: 4px. Borders and bevels are multiples of it. Sprites and scene scale only by whole numbers.
+ * Type: Press Start 2P for titles (12px), Silkscreen for labels (12 to 14px), Atkinson Hyperlegible for reading (16px+).
+ * Images use image-rendering: pixelated. No blur, no soft shadows on art; shadows are hard-edged.
+ */
+.gg {
+  --a: 3px;
+  --u: 4px;
+  --dlg-h: 0px;
+  --side: 300px;
+  position: fixed; inset: 0;
+  display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "top" "center";
+  background: #03050a; color: var(--bone); overflow: hidden;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+@media (min-width: 1024px) {
+  .gg {
+    --a: 4px; --dlg-h: 330px;
+    grid-template-columns: minmax(230px, 270px) minmax(0, 1fr) minmax(250px, 310px);
+    grid-template-areas: "top top top" "left center right";
+  }
+}
+@media (min-width: 1700px) and (min-height: 1000px) { .gg { --a: 5px; } }
+
+/* ---------- top bar ---------- */
+.gg-top { grid-area: top; display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #04060d; border-bottom: var(--u) solid #1b2230; min-width: 0; }
+.gg-title { font-family: var(--font-pixel), monospace; font-size: 12px; line-height: 1.4; color: var(--gold); white-space: nowrap; }
+.gg-banner { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; color: var(--bone-dim); display: none; align-items: center; gap: 8px; }
+@media (min-width: 640px) { .gg-banner { display: flex; } }
+.gg-spacer { flex: 1; }
+.gg-only-small { display: inline-flex; }
+@media (min-width: 1024px) { .gg-only-small { display: none; } }
+.gg-mock { margin: 0 !important; }
+.gg-quiet { color: var(--bone-dim); font-size: 14px; line-height: 1.4; }
+.gg-title .gg-quiet { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; }
+@media (max-width: 420px) { .gg-title .gg-quiet { display: none; } }
+
+/* ---------- side panels ---------- */
+.gg-left, .gg-right {
+  position: fixed; top: 0; bottom: 0; z-index: 60; width: min(92vw, 24rem); margin: 0;
+  display: none; flex-direction: column; min-height: 0; padding: 12px; overflow: hidden;
+  background-color: #070a14;
+}
+.gg-left { left: 0; } .gg-right { right: 0; }
+.gg-left[data-open="true"], .gg-right[data-open="true"] { display: flex; }
+@media (min-width: 1024px) {
+  .gg-left, .gg-right { position: relative; inset: auto; z-index: auto; display: flex; width: auto; margin: 8px; }
+  .gg-left { grid-area: left; } .gg-right { grid-area: right; }
+}
+.gg-side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #1b2230; margin-bottom: 8px; }
+.gg-side-head h2:focus-visible { outline-offset: 2px; }
+.gg-backdrop { position: fixed; inset: 0; z-index: 55; background: rgba(2, 3, 8, 0.72); border: 0; padding: 0; }
+@media (min-width: 1024px) { .gg-backdrop { display: none; } }
+
+.gg-h { font-family: var(--font-label), monospace; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); margin: 12px 0 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gg-sub { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 4px; }
+.gg-big { font-size: 18px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.gg-sha { font-family: var(--font-label), monospace; font-size: 14px; letter-spacing: 0.04em; color: var(--gold); }
+.gg-date { font-size: 14px; color: var(--bone-dim); }
+.gg-msg { font-size: 15px; line-height: 1.35; }
+.gg-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-top: 12px; font-size: 15px; }
+.gg-dl dt { color: var(--bone-dim); }
+.gg-notes { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; font-size: 15px; line-height: 1.4; }
+.gg-notes li { padding-left: 10px; border-left: 2px solid #2b3446; }
+
+/* tabs: flat slabs; the pressed one is lit */
+.gg-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.gg-tab {
+  min-height: 40px; padding: 4px 10px; background: #0b101c; color: var(--bone-dim);
+  font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+  box-shadow: inset 0 0 0 2px #2b3446; cursor: pointer;
+}
+.gg-tab:hover { color: var(--bone); box-shadow: inset 0 0 0 2px var(--gold); }
+.gg-tab[aria-pressed="true"] { background: #1a1622; color: var(--gold); box-shadow: inset 0 0 0 2px var(--gold), inset 0 -4px 0 0 #6b3a2c; }
+@media (max-width: 1023px) { .gg-tab { min-height: 44px; } }
+
+.gg-archive { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 8px; }
+.gg-archive-body, .gg-record { flex: 1; min-height: 0; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; }
+.gg-record { display: block; }
+.gg-wide { width: calc(100% - 8px); margin-top: 6px !important; }
+.gg-emotion { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; color: var(--bone); }
+.gg-emotion svg { color: var(--teal); }
+.gg-tools { border-top: 2px solid #1b2230; margin-top: 8px; padding-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* memory journal pages and time-travel nodes */
+.gg-pages, .gg-timeline { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
+.gg-page, .gg-node {
+  width: 100%; text-align: left; min-height: 44px; padding: 8px 10px; background: #0a0e19; color: var(--bone); cursor: pointer;
+  box-shadow: inset 0 0 0 2px #232b3b; display: grid; gap: 2px; position: relative;
+}
+.gg-page:hover, .gg-node:hover { box-shadow: inset 0 0 0 2px var(--gold); }
+.gg-page[aria-current="page"], .gg-node[aria-current="step"] { background: #17131f; box-shadow: inset 0 0 0 2px var(--gold), inset 4px 0 0 0 var(--crimson-text); }
+.gg-seen { position: absolute; right: 8px; top: 8px; font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; color: var(--teal); }
+.gg-timeline { position: relative; padding-left: 18px; }
+.gg-timeline::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 4px; background: repeating-linear-gradient(#2b3446 0 8px, transparent 8px 12px); }
+.gg-timeline li { position: relative; }
+.gg-timeline li[data-future="true"] .gg-node { opacity: 0.8; }
+.gg-node-dot { position: absolute; left: -17px; top: 16px; width: 12px; height: 12px; background: #2b3446; box-shadow: 0 0 0 2px #070a14; }
+.gg-node[aria-current="step"] .gg-node-dot { background: var(--crimson-text); }
+
+.gg-evidence { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.gg-evidence li { padding: 8px 10px; background: #0a0e19; box-shadow: inset 0 0 0 2px #232b3b; font-size: 15px; line-height: 1.4; }
+.gg-evidence li[data-focus="true"] { box-shadow: inset 0 0 0 2px var(--gold), inset 4px 0 0 0 var(--gold); }
+.gg-excerpt { color: var(--bone); margin: 2px 0; overflow-wrap: anywhere; }
+
+.gg-cite {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; margin: 0 2px; padding: 0 6px;
+  font-family: var(--font-label), monospace; font-size: 12px; color: var(--gold); background: #0a0e19; box-shadow: inset 0 0 0 2px #6b5b3a; cursor: pointer; vertical-align: 0.1em;
+}
+.gg-cite:hover { background: #1a1622; box-shadow: inset 0 0 0 2px var(--gold); }
+@media (max-width: 1023px) { .gg-cite { min-width: 36px; min-height: 36px; } }
+
+/* ---------- center: the Spirit Chamber ---------- */
+.gg-center { grid-area: center; position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.gg-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #03050a; isolation: isolate; }
+@media (min-width: 1024px) { .gg-stage { position: absolute; inset: 0; } }
+.gg-world { position: absolute; width: calc(320 * var(--a)); height: calc(240 * var(--a)); left: 50%; margin-left: calc(-160 * var(--a)); bottom: calc(6px - 46 * var(--a)); pointer-events: none; }
+@media (min-width: 1024px) { .gg-world { bottom: calc(var(--dlg-h) + 22px - 46 * var(--a)); } }
+.gg-world .enc-layer { position: absolute; inset: 0; background-size: 100% 100%; image-rendering: pixelated; }
+.gg-ghost { pointer-events: auto; }
+.gg-ghostwrap { position: relative; }
+.gg-ghostwrap[data-state="disturbed"] { animation: gg-shudder 0.7s steps(1) 1; }
+.gg-ghostwrap[data-state="listening"] { transform: translateY(calc(-1 * var(--a))); }
+@keyframes gg-shudder {
+  0%, 100% { transform: none; } 15% { transform: translateX(calc(-1 * var(--a))); } 30% { transform: translateX(var(--a)); }
+  45% { transform: translate(calc(-1 * var(--a)), var(--a)); } 60% { transform: none; } 75% { transform: translateX(var(--a)); }
+}
+.gg-flash { position: absolute; inset: 0; opacity: 0.5; transform: translateX(var(--a)); mix-blend-mode: screen; pointer-events: none; }
+.gg-flash svg { display: block; width: 100%; height: 100%; }
+
+.gg-tone, .gg-sweep, .gg-vignette { position: absolute; inset: 0; pointer-events: none; }
+.gg-tone { background: transparent; transition: background-color 0.5s steps(5); }
+.gg-stage[data-tone="warm"] .gg-tone { background: rgba(120, 88, 44, 0.3); mix-blend-mode: screen; }
+.gg-stage[data-tone="dim"] .gg-tone { background: rgba(24, 34, 56, 0.2); }
+.gg-stage[data-tone="cold"] .gg-tone { background: rgba(10, 36, 56, 0.3); }
+.gg-stage[data-tone="blood"] .gg-tone { background: rgba(70, 6, 18, 0.16); }
+.gg-vignette { background: radial-gradient(ellipse at 50% 46%, transparent 0 34%, rgba(2, 4, 10, 0.78) 100%); }
+.gg-vignette[data-horror] { background: radial-gradient(ellipse at 50% 46%, rgba(16, 44, 50, 0.06) 0 24%, rgba(22, 4, 10, 0.7) 100%); }
+.gg-stage[data-emotion="sad"] .gg-ghostwrap { opacity: 0.94; }
+.gg-stage[data-emotion="angry"] .gg-ghost, .gg-stage[data-emotion="disturbed"] .gg-ghost { filter: drop-shadow(var(--a) 0 0 rgba(160, 50, 70, 0.55)); }
+
+.gg-sweep { opacity: 0; background: linear-gradient(transparent 0 40%, rgba(180, 205, 215, 0.34) 48% 52%, transparent 60% 100%), repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 6px); height: 130%; top: -130%; }
+.gg-stage[data-rewinding] .gg-sweep { opacity: 1; animation: gg-sweep 1s steps(20) 1 forwards; }
+@keyframes gg-sweep { from { transform: translateY(0); } to { transform: translateY(200%); } }
+.gg-stage[data-rewinding] .gg-world { animation: gg-wobble 1s steps(1) 1; }
+@keyframes gg-wobble { 0%, 100% { transform: none; } 20% { transform: translateX(var(--a)); } 40% { transform: translateX(calc(-2 * var(--a))); } 60% { transform: translateX(var(--a)); } 80% { transform: translateX(calc(-1 * var(--a))); } }
+
+.gg-era { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: rgba(4, 6, 13, 0.88); box-shadow: inset 0 0 0 2px #2b3446; white-space: nowrap; font-size: 14px; }
+.gg-rewind-label { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 3; font-family: var(--font-pixel), monospace; font-size: 12px; color: var(--bone); text-shadow: 2px 2px 0 #000; animation: gg-blink 0.5s steps(1) infinite; }
+@keyframes gg-blink { 50% { opacity: 0.2; } }
+
+/* ---------- dialogue window ---------- */
+.gg-dlg { position: relative; z-index: 5; flex: none; display: flex; flex-direction: column; min-width: 0; }
+@media (min-width: 1024px) { .gg-dlg { position: absolute; left: 12px; right: 12px; bottom: 12px; max-height: calc(var(--dlg-h) + 8px); } }
+.gg-dlg-tab { align-self: flex-start; margin-left: 12px; margin-bottom: -4px; position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 12px; background: #05080f; box-shadow: inset 0 0 0 4px #242c3b; }
+.gg-nameplate { font-family: var(--font-pixel), monospace; font-size: 12px; line-height: 1.4; color: var(--gold); }
+.gg-dlg-box {
+  display: flex; gap: 12px; min-height: 0; padding: 14px; background-color: rgba(5, 8, 16, 0.96);
+  box-shadow: inset 0 0 0 4px #242c3b, inset 0 0 0 6px #070a14, inset 0 0 0 7px rgba(150, 140, 120, 0.2);
+}
+.gg-dlg[data-expression="speaking"] .gg-dlg-box { box-shadow: inset 0 0 0 4px #242c3b, inset 0 0 0 6px #070a14, inset 0 0 0 7px rgba(150, 140, 120, 0.2), inset 0 0 24px rgba(117, 52, 63, 0.28); }
+.gg-portrait { flex: none; align-self: flex-start; width: 84px; height: 84px; background: #070a14; box-shadow: 0 0 0 4px #242c3b; overflow: hidden; }
+@media (min-width: 640px) { .gg-portrait { width: 112px; height: 112px; } }
+.gg-portrait svg { display: block; width: 100%; height: 100%; }
+.gg-dlg-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.gg-log { position: relative; overflow-y: auto; max-height: 7.5rem; min-height: 3.2rem; padding-right: 8px; overscroll-behavior: contain; }
+@media (min-width: 1024px) { .gg-log { max-height: 9.5rem; } }
+.gg-line { font-size: 17px; line-height: 1.5; margin: 0 0 6px; color: var(--bone); }
+.gg-you { font-size: 15px; line-height: 1.4; margin: 0 0 6px; padding: 2px 10px; border-right: 4px solid #3f6867; background: rgba(10, 26, 30, 0.7); text-align: right; color: var(--bone); }
+.gg-asof { font-size: 13px; color: var(--bone-dim); }
+.gg-ghostline { border-left: 2px solid rgba(117, 52, 63, 0.9); padding-left: 10px; color: #dcd8cf; }
+.gg-rest { visibility: hidden; }
+.gg-sources { font-size: 14px; color: var(--bone-dim); margin: 0 0 6px; }
+.gg-skip { font-family: var(--font-label), monospace; font-size: 12px; color: var(--bone-dim); min-height: 28px; padding: 0 8px; box-shadow: inset 0 0 0 2px #2b3446; }
+.gg-book { padding: 8px 12px; background: #0a0e19; box-shadow: inset 0 0 0 2px #232b3b, inset 6px 0 0 0 #1a1622; }
+.gg-form { display: grid; gap: 6px; }
+.gg-choices { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.gg-choices li { flex: 1 1 10rem; }
+.gg-choice { width: calc(100% - 8px); font-size: 12px !important; min-height: 40px !important; margin: 4px !important; padding: 4px 8px !important; letter-spacing: 0.02em !important; }
+.gg-askrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gg-askrow .rpg-input { flex: 1 1 10rem; min-width: 0; min-height: 44px; }
+.gg-askrow .rpg-btn { margin: 4px; }
+.gg-hint { font-size: 12px; line-height: 1.3; color: var(--bone-dim); }
+@media (max-width: 639px) {
+  .gg-choices li:nth-child(n + 3) { display: none; }
+  .gg-choices li { flex: 1 1 40%; }
+  .gg-hint { display: none; }
+  .gg-dlg-box { padding: 10px; gap: 8px; flex-wrap: wrap; }
+  /* portrait and text share the first row; choices and the question box get the full width below */
+  .gg-dlg-main { display: contents; }
+  .gg-log { flex: 1 1 0; min-width: 0; max-height: 8.5rem; }
+  .gg-form, .gg-dlg-main > .gg-askrow { flex: 1 1 100%; }
+  .gg-line { font-size: 16px; }
+  .gg-hide-s { display: none; }
+  .gg-act-label { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0; }
+}
+@media (min-width: 640px) { .gg-hide-l { display: none; } }
+.gg-dlg[data-expression="speaking"] .gg-ghostline { text-shadow: -1px 0 rgba(117, 52, 63, 0.55), 1px 0 rgba(70, 130, 130, 0.25); }
+
+/* ---------- Spirit Mirror (inside the shared Drawer) ---------- */
+.gg-mirror { display: grid; gap: 12px; }
+.gg-mirror-pair { display: flex; gap: 12px; justify-content: center; }
+.gg-mirror figure { margin: 0; text-align: center; }
+.gg-mirror figcaption { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; margin-top: 6px; color: var(--bone); }
+.gg-mirror-art { background: linear-gradient(#0d1124, #070a14); box-shadow: inset 0 0 0 4px #242c3b; padding: 4px; }
+.gg-mirror-art[data-bad] { background: linear-gradient(#150a12, #070a14); }
+.gg-mirror-sprite { display: block; width: calc(64 * 2px); height: calc(80 * 2px); }
+@media (min-width: 640px) { .gg-mirror-sprite { width: calc(64 * 3px); height: calc(80 * 3px); } }
+
+/* ---------- motion that is only decoration ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .gg-ghostwrap, .gg-sweep, .gg-world, .gg-rewind-label { animation: none !important; }
+  .gg-tone { transition: none; }
+  .gg-sweep { opacity: 0 !important; }
+}
+
+/* ================= horror pass for the character (art lab milestone) ================= */
+/* The ghost: one atlas per form, shown by CSS only. Integer pixel scale from --a. */
+.sprite { position: relative; width: calc(64 * var(--a)); height: calc(80 * var(--a)); }
+.sprite-layer { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: pixelated; }
+.sprite-talk { animation: gg-talk 0.46s steps(1) infinite; }
+.sprite-idle { animation-name: gg-idle; animation-iteration-count: infinite; }
+@keyframes gg-idle { from { background-position-x: 0; } to { background-position-x: var(--idle-end); } }
+@keyframes gg-talk { 0% { opacity: 1; } 50% { opacity: 0; } }
+.gg-flash .sprite { width: 100%; height: 100%; }
+
+/* Animation 1: blood forms, hangs, falls, splashes. Frame 3 (a hanging bead) is the still state. */
+.gg-drip {
+  position: absolute; width: calc(8 * var(--a)); pointer-events: none;
+  background-repeat: no-repeat; background-size: calc(8 * 13 * var(--a)) 100%; image-rendering: pixelated;
+  background-position: calc(-8 * 3 * var(--a)) 0;
+  animation: gg-drip 7s steps(1, end) infinite;
+}
+@keyframes gg-drip {
+  0% { background-position: calc(-8 * 0 * var(--a)) 0; }
+  14% { background-position: calc(-8 * 1 * var(--a)) 0; }
+  28% { background-position: calc(-8 * 2 * var(--a)) 0; }
+  42% { background-position: calc(-8 * 3 * var(--a)) 0; }
+  54% { background-position: calc(-8 * 4 * var(--a)) 0; }
+  56.5% { background-position: calc(-8 * 5 * var(--a)) 0; }
+  58.5% { background-position: calc(-8 * 6 * var(--a)) 0; }
+  60.5% { background-position: calc(-8 * 7 * var(--a)) 0; }
+  62.5% { background-position: calc(-8 * 8 * var(--a)) 0; }
+  64.5% { background-position: calc(-8 * 9 * var(--a)) 0; }
+  66.5% { background-position: calc(-8 * 10 * var(--a)) 0; }
+  74% { background-position: calc(-8 * 11 * var(--a)) 0; }
+  82% { background-position: calc(-8 * 12 * var(--a)) 0; }
+  100% { background-position: calc(-8 * 12 * var(--a)) 0; }
+}
+
+/* Animation 2 holds the whole room still: a sudden twitch, then everything freezes with the ghost. */
+.gg[data-frozen], .gg[data-frozen] *, .gg[data-frozen] *::before, .gg[data-frozen] *::after { animation-play-state: paused !important; }
+.gg[data-frozen] .gg-vignette[data-horror] { background: radial-gradient(ellipse at 50% 46%, rgba(10, 36, 40, 0.12) 0 18%, rgba(30, 2, 8, 0.86) 100%); }
+
+/* Animation 3: the room reacts while the body changes. */
+.gg-stage[data-transforming] .gg-ghost { animation: gg-convulse 0.22s steps(1) infinite; }
+@keyframes gg-convulse {
+  0% { transform: none; } 25% { transform: translate(var(--a), 0); } 50% { transform: translate(calc(-1 * var(--a)), var(--a)); } 75% { transform: translate(0, calc(-1 * var(--a))); }
+}
+.gg-stage[data-transforming] .gg-tone { background: rgba(96, 8, 22, 0.3); }
+.gg-stage[data-transforming] .gg-vignette { animation: gg-pulse 0.5s steps(2) infinite; }
+@keyframes gg-pulse { 50% { filter: brightness(0.55); } }
+
+/* Dialogue: an NPC that should not be talking to you. Records stay plain and steady. */
+.gg-dlg-box {
+  background-image:
+    linear-gradient(#58080f, #58080f) 7% 0 / 4px 16px no-repeat,
+    linear-gradient(#86101b, #86101b) 7% 0 / 4px 7px no-repeat,
+    linear-gradient(#58080f, #58080f) 31% 0 / 4px 9px no-repeat,
+    linear-gradient(#58080f, #58080f) 64% 0 / 4px 20px no-repeat,
+    linear-gradient(#86101b, #86101b) 64% 0 / 4px 9px no-repeat,
+    linear-gradient(#58080f, #58080f) 88% 0 / 4px 11px no-repeat,
+    radial-gradient(ellipse at 100% 100%, rgba(70, 8, 16, 0.5), transparent 45%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 6px) calc(100% - 10px), calc(100% - 6px) calc(100% - 4px), calc(100% - 14px) calc(100% - 4px), calc(100% - 14px) 100%, 18px 100%, 18px calc(100% - 5px), 8px calc(100% - 5px), 8px calc(100% - 9px), 0 calc(100% - 9px));
+}
+.gg-dlg-box::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 100%; pointer-events: none; opacity: 0; background: repeating-linear-gradient(0deg, transparent 0 5px, rgba(120, 10, 26, 0.25) 5px 6px); }
+.gg-dlg-box { position: relative; }
+.gg-nameplate { text-shadow: 2px 2px 0 #000, -1px 0 rgba(134, 16, 27, 0.8); }
+.gg-dlg-tab { box-shadow: inset 0 0 0 4px #242c3b, inset 0 -4px 0 0 #58080f; }
+.gg-ghostline { font-style: italic; color: #e6e1d4; border-left: 3px solid #86101b; padding-left: 10px; letter-spacing: 0.01em; text-shadow: 1px 0 rgba(134, 16, 27, 0.55); }
+.gg-dlg[data-form="horror"] .gg-ghostline { text-shadow: -1px 0 rgba(180, 34, 50, 0.7), 1px 0 rgba(60, 200, 180, 0.28); }
+.gg-dlg[data-form="human"] .gg-ghostline { border-left-color: var(--gold); text-shadow: none; }
+.gg-fact { font-style: normal; background: rgba(214, 208, 185, 0.07); border-left: 3px solid var(--gold); padding: 2px 8px; color: var(--bone); text-shadow: none; }
+.gg-fact[data-kind="unknown"] { border-left-color: var(--crimson-text); }
+.gg-fact[data-kind="reading"] { border-left-color: var(--purple-text); }
+.gg-portrait { --a: 3px; }
+@media (min-width: 640px) { .gg-portrait { --a: 4px; } }
+.gg-portrait-inner { position: relative; width: calc(64 * var(--a)); height: calc(80 * var(--a)); margin: calc(-6 * var(--a)) 0 0 calc(-18 * var(--a)); }
+.gg-portrait[data-form="horror"] { background: linear-gradient(#1a0a12, #070a14); box-shadow: 0 0 0 4px #3a0a12; }
+.gg-portrait[data-form="distorted"] { box-shadow: 0 0 0 4px #2b1a22; }
+.gg-dlg[data-talking] .gg-portrait { box-shadow: 0 0 0 4px #6b1420; }
+
+/* Rare corruption: the ghost's voice and face tear for a third of a second. Facts never move. */
+.gg-dlg[data-corrupt] .gg-ghostline { animation: gg-tear 0.32s steps(1) 1; }
+.gg-dlg[data-corrupt] .gg-portrait { animation: gg-tear 0.32s steps(1) 1; }
+.gg-dlg[data-corrupt] .gg-dlg-box::after { animation: gg-scan 0.32s steps(1) 1; }
+@keyframes gg-tear {
+  0% { transform: translateX(-3px); clip-path: inset(0 0 55% 0); } 20% { transform: translateX(4px); clip-path: inset(40% 0 0 0); }
+  40% { transform: translateX(-2px); clip-path: none; } 60% { transform: translateX(3px); } 80% { transform: translateX(-1px); } 100% { transform: none; }
+}
+@keyframes gg-scan { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+
+.gg-tool-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.gg-tools .gg-tabs { margin-top: 6px; }
+.gg-mirror-sprite { --a: 2px; }
+@media (min-width: 640px) { .gg-mirror-sprite { --a: 3px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-drip, .sprite-talk, .sprite-idle, .gg-stage[data-transforming] .gg-ghost, .gg-stage[data-transforming] .gg-vignette,
+  .gg-dlg[data-corrupt] .gg-ghostline, .gg-dlg[data-corrupt] .gg-portrait, .gg-dlg[data-corrupt] .gg-dlg-box::after { animation: none !important; }
+  .sprite-talk { opacity: 1; }
+}
+
+
+/* Twitch: the whole body jerks with the head for the flinch frames, then holds still for the freeze. */
+.sprite[data-frame="twitchA"] { transform: translate(calc(-1 * var(--a)), 0); }
+.sprite[data-frame="twitchB"] { transform: translate(var(--a), calc(-1 * var(--a))); }
+.sprite[data-frame="freeze"] { transform: translate(0, var(--a)); }
+
+/* tighter review tools (offline demo) so the Spirit Record keeps its room */
+.gg-tools .gg-tab { min-height: 32px; padding: 2px 8px; }
+.gg-tool-row .rpg-btn { min-height: 36px !important; padding: 2px 8px !important; margin: 2px !important; }
+@media (min-width: 1024px) { .gg-log { max-height: 11rem; } }
+
+/* evidence excerpts keep their line breaks and wrap long words */
+.gg-excerpt { white-space: pre-wrap; overflow-wrap: anywhere; }
+.gg-link { color: var(--gold); text-decoration: underline; text-underline-offset: 4px; }
+.gg-link:hover { color: #fff; }
+.gg-replynote { font-size: 13px; line-height: 1.35; color: var(--bone-dim); margin: 0 0 8px; }
+.gg-error { margin: 4px 0 8px; }
+
+/* ================= V5.2: one conversation scene, a Memory Journal on the right ================= */
+/* Short laptops (1366 x 768): keep the whole ghost on screen above the dialogue. */
+@media (min-width: 1024px) and (max-height: 820px) { .gg { --dlg-h: 290px; } }
+@media (min-width: 1024px) and (max-height: 700px) { .gg { --a: 3px; --dlg-h: 270px; } }
+
+/* Scrollbars only where something actually scrolls, and thin. */
+.gg * { scrollbar-width: thin; scrollbar-color: #2b3446 transparent; }
+.gg-left, .gg-right { overflow: hidden; }
+.gg-archive { display: flex; flex-direction: column; min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.gg-journal { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.gg-journal-top { flex: none; display: grid; gap: 6px; padding-bottom: 8px; border-bottom: 2px solid #1b2230; }
+.gg-memories { list-style: none; margin: 8px 0 0; padding: 0 4px 0 0; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 6px; align-content: start; position: relative; }
+.gg-memory {
+  width: 100%; text-align: left; min-height: 44px; padding: 8px 10px 8px 22px; background: #0a0e19; color: var(--bone); cursor: pointer;
+  box-shadow: inset 0 0 0 2px #232b3b; display: grid; gap: 2px; position: relative;
+}
+.gg-memory:hover { box-shadow: inset 0 0 0 2px var(--gold); }
+.gg-memory[data-selected] { background: #17131f; box-shadow: inset 0 0 0 2px var(--gold), inset 4px 0 0 0 var(--crimson-text); }
+.gg-memory[data-present] .gg-sha::after { content: " ●"; color: var(--teal); }
+.gg-memory .gg-node-dot { position: absolute; left: 8px; top: 14px; width: 8px; height: 8px; background: #2b3446; }
+.gg-memory[data-selected] .gg-node-dot { background: var(--crimson-text); }
+.gg-memory-tags { font-size: 12px; }
+.gg-past { display: grid; gap: 6px; padding: 8px 10px; background: #1a0f16; box-shadow: inset 0 0 0 2px var(--crimson); font-size: 14px; line-height: 1.35; }
+.gg-context { padding: 6px 10px; background: #0a0e19; box-shadow: inset 0 0 0 2px #232b3b; font-size: 14px; line-height: 1.35; }
+.gg-context p { margin: 0 0 2px; }
+
+/* the stage chip: date, era, and the way back */
+.gg-era { flex-wrap: wrap; justify-content: center; max-width: calc(100% - 16px); white-space: normal; }
+.gg-era[data-past] { box-shadow: inset 0 0 0 2px var(--crimson); }
+.gg-return { min-height: 32px; padding: 0 10px; font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; color: var(--bone); background: #1a0f16; box-shadow: inset 0 0 0 2px var(--crimson-text); cursor: pointer; }
+.gg-return:hover { background: #2a1520; }
+@media (max-width: 1023px) { .gg-return { min-height: 44px; } }
+
+/* the dialogue: input first, suggestions folded away, one scroll area */
+.gg-dlg-box { overflow: hidden; }
+.gg-dlg[data-past] .gg-dlg-box { box-shadow: inset 0 0 0 4px #242c3b, inset 0 0 0 6px #070a14, inset 0 0 0 7px rgba(150, 140, 120, 0.2), inset 0 3px 0 0 var(--crimson); }
+.gg-log { flex: 1 1 auto; max-height: none; min-height: 3.5rem; }
+.gg-dlg-main { min-height: 0; }
+.gg-dlg { max-height: 56dvh; }
+@media (min-width: 1024px) { .gg-dlg { max-height: calc(var(--dlg-h) + 8px); } }
+.gg-suggest { font-size: 14px; }
+.gg-suggest summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--bone-dim); font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; list-style: none; }
+.gg-suggest summary::before { content: "▶ "; margin-right: 6px; }
+.gg-suggest[open] summary::before { content: "▼ "; }
+.gg-suggest .gg-choices { margin-top: 2px; }
+.gg-travel { border-top: 2px dashed #3a2a3a; margin-top: 8px; padding-top: 8px; }
+@media (max-width: 1023px) { .gg-suggest summary { min-height: 44px; } }
+@media (max-width: 639px) {
+  .gg-choices li:nth-child(n + 3) { display: block; }
+  .gg-choices li { flex: 1 1 100%; }
+}
+.gg-evdetail .gg-excerpt { background: #0a0e19; padding: 8px 10px; box-shadow: inset 0 0 0 2px #232b3b; max-height: 40vh; overflow-y: auto; font-size: 15px; line-height: 1.45; }
+
+/* keyboard focus on a memory must be unmistakable */
+.gg-memory:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; z-index: 1; }
+
+/* ================= V5.3: quieter encounter ================= */
+.gg-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.gg-prompts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.gg-prompt {
+  font-family: var(--font-body), system-ui, sans-serif; font-size: 13px; line-height: 1.2; color: var(--bone-dim); cursor: pointer;
+  min-height: 32px; padding: 4px 10px; background: transparent; border: 0; box-shadow: inset 0 0 0 2px #232b3b; text-align: left;
+}
+.gg-prompt:hover { color: var(--bone); box-shadow: inset 0 0 0 2px var(--gold); }
+.gg-prompt:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+@media (max-width: 1023px) { .gg-prompt { min-height: 44px; } }
+@media (max-width: 639px) { .gg-prompts li:nth-child(n + 3) { display: none; } .gg-hint { display: block; } }
+.gg-replynote { font-size: 12px; margin: 0 0 6px; opacity: 0.8; }
+.gg-ghostline, .gg-fact { margin-bottom: 8px; }
+
+/* phones: the header holds back arrow, title, sound, Archive and Journal without overlap */
+@media (max-width: 639px) {
+  .gg-top { gap: 6px; padding: 8px; }
+  .gg-top .rpg-btn { padding-left: 8px !important; padding-right: 8px !important; }
+  .gg-title { font-size: 12px; }
+}
+
+/* an AI-written reply is marked so it cannot be mistaken for a scripted one */
+.gg-ai-tag { display: inline-block; margin-right: 6px; padding: 0 5px; font-family: var(--font-label), monospace; font-size: 12px; line-height: 1.5; color: #04141a; background: var(--teal); }
+.gg-replynote[data-provider="bedrock"] { opacity: 1; color: var(--bone); }
+
+/* ================= V5.4: a retro RPG encounter ================= */
+/* --- themed backdrops: the far landmark and the mid-ground props change; sky, ground, lantern and fog stay --- */
+.gg-stage[data-scene="network"] .enc-far { background-image: url(/scene/far-network.png); }
+.gg-stage[data-scene="network"] .enc-mid { background-image: url(/scene/mid-network.png); }
+.gg-stage[data-scene="frontend"] .enc-far { background-image: url(/scene/far-frontend.png); }
+.gg-stage[data-scene="frontend"] .enc-mid { background-image: url(/scene/mid-frontend.png); }
+.gg-stage[data-scene="infra"] .enc-far { background-image: url(/scene/far-infra.png); }
+.gg-stage[data-scene="infra"] .enc-mid { background-image: url(/scene/mid-infra.png); }
+.gg-stage[data-scene="data"] .enc-far { background-image: url(/scene/far-data.png); }
+.gg-stage[data-scene="data"] .enc-mid { background-image: url(/scene/mid-data.png); }
+.gg-stage[data-scene="comms"] .enc-far { background-image: url(/scene/far-comms.png); }
+.gg-stage[data-scene="comms"] .enc-mid { background-image: url(/scene/mid-comms.png); }
+/* a mood wash per family, over the scene and under the ghost's dialogue */
+.gg-stage[data-scene]:not([data-scene="graveyard"])::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; mix-blend-mode: screen; }
+.gg-stage[data-scene="network"]::after { background: radial-gradient(ellipse at 38% 28%, rgba(120, 30, 40, 0.16), transparent 55%); }
+.gg-stage[data-scene="frontend"]::after { background: radial-gradient(ellipse at 40% 40%, rgba(50, 80, 150, 0.16), transparent 60%); }
+.gg-stage[data-scene="infra"]::after { background: radial-gradient(ellipse at 30% 70%, rgba(150, 80, 30, 0.14), transparent 55%); }
+.gg-stage[data-scene="data"]::after { background: radial-gradient(ellipse at 36% 50%, rgba(30, 130, 140, 0.16), transparent 60%); }
+.gg-stage[data-scene="comms"]::after { background: radial-gradient(ellipse at 76% 36%, rgba(160, 130, 60, 0.14), transparent 55%); }
+
+/* --- the proof, quietly: a small seal after a line --- */
+.gg-cite { position: relative; display: inline-flex; align-items: center; justify-content: center; vertical-align: baseline; margin: 0 0 0 8px; padding: 3px 4px; min-width: 0; min-height: 0; font-size: 0; background: transparent; box-shadow: none; border: 0; color: var(--bone-dim); opacity: 0.55; cursor: pointer; }
+.gg-cite::after { content: ""; position: absolute; inset: -10px; }
+.gg-cite:hover, .gg-cite:focus-visible { opacity: 1; color: var(--gold); background: transparent; box-shadow: none; }
+.gg-cite:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+@media (max-width: 1023px) { .gg-cite { min-width: 0; min-height: 0; padding: 6px; } .gg-cite::after { inset: -8px; } }
+.gg-records { display: grid; gap: 18px; }
+.gg-records > section + section { border-top: 2px dashed #2a3347; padding-top: 14px; }
+
+/* --- the world's own words on the left --- */
+.gg-place { margin: 2px 0 8px; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); }
+
+/* --- framing: pixel corner studs on the panels and on the dialogue --- */
+.gg-left, .gg-right { position: relative; }
+.gg-left::before, .gg-right::before, .gg-dlg-box::before {
+  content: ""; position: absolute; inset: 3px; pointer-events: none; z-index: 2;
+  background:
+    linear-gradient(var(--gold), var(--gold)) 0 0 / 8px 3px no-repeat, linear-gradient(var(--gold), var(--gold)) 0 0 / 3px 8px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 100% 0 / 8px 3px no-repeat, linear-gradient(var(--gold), var(--gold)) 100% 0 / 3px 8px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 0 100% / 8px 3px no-repeat, linear-gradient(var(--gold), var(--gold)) 0 100% / 3px 8px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 100% 100% / 8px 3px no-repeat, linear-gradient(var(--gold), var(--gold)) 100% 100% / 3px 8px no-repeat;
+  opacity: 0.7;
+}
+.gg-side-head { position: relative; }
+.gg-side-head .rpg-title { letter-spacing: 0.08em; }
+.gg-side-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: repeating-linear-gradient(90deg, var(--gold) 0 6px, transparent 6px 10px); opacity: 0.5; }
+.gg-h { font-family: var(--font-label), monospace; letter-spacing: 0.08em; }
+
+/* --- the dialogue: a nameplate, a window, a command line --- */
+.gg-dlg-tab { box-shadow: inset 0 0 0 3px #3a2d1f, inset 0 0 0 5px #05080f, inset 0 -4px 0 0 #58080f; background: #070a14; }
+.gg-nameplate { letter-spacing: 0.04em; }
+.gg-dlg-box { background-color: rgba(4, 6, 14, 0.97); }
+.gg-line { font-family: var(--font-body), system-ui, sans-serif; font-size: 18px; line-height: 1.55; }
+.gg-ghostline { font-size: 19px; }
+.gg-you { font-family: var(--font-body), system-ui, sans-serif; font-size: 15px; }
+.gg-askrow { position: relative; }
+.gg-askrow .rpg-input { padding-left: 30px; caret-color: var(--gold); }
+.gg-askrow::before { content: "▶"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 1; font-size: 12px; color: var(--gold); pointer-events: none; }
+.gg-askrow .rpg-btn { font-family: var(--font-pixel), monospace; }
+.gg-prompt { font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.03em; text-transform: none; }
+.gg-prompt::before { content: "▶ "; color: transparent; }
+.gg-prompt:hover::before, .gg-prompt:focus-visible::before { color: var(--gold); }
+.gg-replynote { font-family: var(--font-label), monospace; text-transform: none; letter-spacing: 0.02em; }
+.gg-memory .gg-sha, .gg-memory .gg-date { font-family: var(--font-label), monospace; }
+.gg-memory .gg-msg { font-family: var(--font-body), system-ui, sans-serif; font-size: 15px; }
+.gg-era { box-shadow: inset 0 0 0 3px #3a2d1f, inset 0 0 0 5px #05080f; }
+@media (prefers-reduced-motion: reduce) { .gg-prompt:hover::before { transition: none; } }
+
+/* --- arriving from a summoning: out of the dark, the ghost rises --- */
+.gg-arrive { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+/* an RPG name card over the dark as it opens */
+.gg-arrive-card { position: absolute; left: 50%; top: 38%; z-index: 2; margin: 0; transform: translate(-50%, -50%); display: grid; gap: 14px; justify-items: center; text-align: center;
+  font-family: var(--font-pixel), monospace; animation: gg-arrive-card 1.8s steps(1) forwards; }
+.gg-arrive-card span { font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: #c8202e; }
+.gg-arrive-card b { font-weight: 400; font-size: clamp(16px, 3vw, 28px); color: #ece4cf; text-shadow: 3px 3px 0 #000, 0 0 18px rgba(200, 32, 46, 0.55); }
+@keyframes gg-arrive-card { 0%, 6% { opacity: 0; } 7%, 12% { opacity: 1; } 13% { opacity: 0.2; } 14%, 70% { opacity: 1; } 71% { opacity: 0.3; } 72%, 76% { opacity: 1; } 77%, 100% { opacity: 0; } }
+.gg[data-arrive] .gg-ghost { animation: gg-ghost-rise 1.1s steps(7) 0.6s both; }
+@keyframes gg-ghost-rise { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gg-arrive, .gg-arrive-card, .gg[data-arrive] .gg-ghost { animation: none !important; } .gg-arrive { display: none; } }
+
+/* phones: the dialogue keeps one scroll area (the conversation); prompts and text are sized to fit */
+@media (max-width: 639px) {
+  .gg-line { font-size: 16px; line-height: 1.45; }
+  .gg-ghostline { font-size: 17px; }
+  .gg-prompts li:nth-child(n + 2) { display: none; }
+  .gg-prompt { font-size: 12px; }
+}
+
+/* ================= V6.1: one clean dialogue window, the ghost first ================= */
+/* facts are plain lines with a thin gold rule; the ghost's own voice stays italic with a crimson rule */
+.gg-fact { background: none; border-left: 2px solid rgba(228, 193, 139, 0.7); padding: 0 0 0 10px; }
+.gg-fact[data-kind="unknown"] { border-left-color: var(--crimson-text); }
+.gg-ghostline { border-left: 3px solid #86101b; }
+.gg-turn + .gg-turn { margin-top: 10px; }
+/* a heavier pixel frame: brown-gold bevel, dark channel, steel line, faint inner light */
+.gg-dlg-box {
+  box-shadow: inset 0 0 0 4px #3a2d1f, inset 0 0 0 6px #070a14, inset 0 0 0 8px #242c3b, inset 0 0 0 9px rgba(228, 193, 139, 0.2);
+  padding: 18px 20px;
+}
+.gg-dlg[data-past] .gg-dlg-box { box-shadow: inset 0 0 0 4px #3a2d1f, inset 0 0 0 6px #070a14, inset 0 0 0 8px #242c3b, inset 0 3px 0 0 var(--crimson); }
+.gg-dlg-tab { box-shadow: inset 0 0 0 3px #3a2d1f, inset 0 0 0 5px #070a14, inset 0 -3px 0 0 #58080f; }
+.gg-portrait { box-shadow: 0 0 0 3px #3a2d1f, 0 0 0 5px #070a14; }
+.gg-replynote { opacity: 0.6; font-size: 12px; margin-top: 2px; }
+/* the ghost reads as a figure: a soft halo behind it and a ground shadow under it */
+.gg-stage::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 20% 36% at 50% 46%, rgba(150, 180, 200, 0.1), transparent 72%), radial-gradient(ellipse 16% 5% at 50% 78%, rgba(0, 0, 0, 0.45), transparent 75%); }
+/* header: quiet. A small provider badge replaces the repo line */
+.gg-banner { font-size: 12px; opacity: 0.85; }
+
+/* phones: the records open as a sheet over the scene (top), so the dialogue and the input stay in view below it */
+@media (max-width: 1023px) {
+  .drawer[data-testid="evidence-drawer"] { margin: 0 0 auto 0; width: 100vw; max-width: 100vw; height: auto; max-height: 42dvh; }
+  .drawer[data-testid="evidence-drawer"]::backdrop { background: rgba(3, 5, 12, 0.2); }
+  .drawer[data-testid="evidence-drawer"] .drawer-inner { max-height: 42dvh; border-left: 0; border-bottom: 4px solid #3a2d1f; box-shadow: none; }
+  .drawer[data-testid="evidence-drawer"] .drawer-head { padding: 6px 14px; }
+  .drawer[data-testid="evidence-drawer"] .drawer-body { padding: 10px 14px; }
+}
+
+/* phones (V6.1): portrait and conversation share the first row; the form takes the second. The conversation row is the
+   one that shrinks and scrolls, so the input is never pushed out of the window. */
+@media (max-width: 639px) {
+  .gg-dlg-box { display: grid; grid-template-columns: 84px minmax(0, 1fr); grid-template-rows: minmax(3.5rem, 1fr) auto; column-gap: 10px; row-gap: 8px; padding: 10px 12px; flex-wrap: nowrap; }
+  .gg-dlg-main { display: contents; }
+  .gg-portrait { grid-column: 1; grid-row: 1; }
+  .gg-log { grid-column: 2; grid-row: 1; min-height: 0; max-height: none; overflow-y: auto; }
+  .gg-form { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* Normal view: a checked fact is spoken by the ghost like any other line, but never glitched (facts stay readable). */
+.gg-spoken { text-shadow: none !important; animation: none !important; }
+
+/* Return to present lives at the top of the Memory Journal panel. */
+.gg-return-panel { display: block; width: 100%; margin-bottom: 8px; }
+
+/* ---------- Memory Journal as a vertical timeline (rail + dots, no boxes) ---------- */
+.gg-life { display: grid; gap: 2px; padding: 8px 10px; background: #0a0e19; box-shadow: inset 0 0 0 2px #232b3b; font-size: 14px; }
+.gg-life-row { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.gg-timeline { gap: 0; padding-left: 6px; }
+.gg-timeline > li { position: relative; padding-left: 18px; }
+.gg-timeline > li::before { content: ""; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background: #2b3446; }
+.gg-timeline > li:first-child::before { top: 20px; }
+.gg-timeline > li:last-child::before { bottom: calc(100% - 20px); }
+.gg-timeline .gg-memory { background: none; box-shadow: none; padding: 8px 8px 10px 4px; min-height: 44px; }
+.gg-timeline .gg-memory:hover { background: #0f1422; box-shadow: none; }
+.gg-timeline .gg-memory[data-selected] { background: #17131f; box-shadow: inset 3px 0 0 0 var(--crimson-text); }
+.gg-timeline .gg-memory .gg-node-dot { left: -17px; top: 14px; width: 12px; height: 12px; background: #2b3446; box-shadow: 0 0 0 2px #070a14; }
+.gg-timeline .gg-memory[data-selected] .gg-node-dot { background: var(--crimson-text); }
+.gg-timeline .gg-memory[data-present] .gg-node-dot { background: var(--teal); }
+.gg-timeline .gg-memory[data-present] .gg-sha::after { content: none; }
+.gg-timeline .gg-memory .gg-date { color: var(--bone); }
+.gg-timeline .gg-memory .gg-msg { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ?dev=1 only: a checked line keeps the ghost's font and size; just its left bar is gold, so it can still be told apart. */
+.gg-devfact { border-left-color: var(--gold); }
+.gg-devfact[data-kind="unknown"] { border-left-color: var(--crimson-text); }
+.gg-devfact[data-kind="reading"] { border-left-color: var(--purple-text); }
+
+/* ================= Retro survival-horror dialogue box ================= */
+/* Pure black, a thin worn border with square corners, faint scanlines, typewriter text, red only as an accent. */
+.gg .gg-dlg .gg-dlg-box {
+  background: #000; border: 2px solid #b9b2a2; border-radius: 0;
+  box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #000, inset 0 0 0 2px #2a0a0e, inset 0 0 40px rgba(0, 0, 0, 0.9);
+}
+.gg .gg-dlg .gg-dlg-box::after {
+  opacity: 1; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.025) 3px 4px);
+}
+.gg .gg-dlg[data-corrupt] .gg-dlg-box::after { background: repeating-linear-gradient(0deg, transparent 0 5px, rgba(120, 10, 26, 0.25) 5px 6px); }
+.gg .gg-dlg[data-past] .gg-dlg-box { border-color: #8a2a33; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #000, inset 0 0 40px rgba(60, 0, 8, 0.6); }
+.gg .gg-dlg .gg-dlg-tab {
+  background: #000; border: 2px solid #b9b2a2; border-bottom: 0; border-radius: 0; margin-bottom: -2px; box-shadow: none; padding: 4px 12px;
+}
+.gg .gg-dlg .gg-nameplate { color: #ff3b4e; text-shadow: none; letter-spacing: 0.14em; text-transform: uppercase; }
+.gg .gg-log .gg-ghostline {
+  font-family: var(--font-label), ui-monospace, monospace; font-style: normal; font-size: 16px; line-height: 1.65; letter-spacing: 0.02em;
+  border-left: 0; padding-left: 0; color: #e4dfd2; text-shadow: 0 0 1px rgba(228, 223, 210, 0.35);
+}
+.gg .gg-dlg[data-form="horror"] .gg-log .gg-ghostline:not(.gg-spoken) { text-shadow: 1px 0 rgba(200, 16, 46, 0.55), -1px 0 rgba(60, 200, 180, 0.15); }
+.gg .gg-log .gg-spoken { text-shadow: none !important; }
+.gg .gg-log .gg-devfact { border-left: 2px solid var(--gold); padding-left: 8px; }
+.gg-speaker {
+  display: block; margin: 0 0 2px; font-family: var(--font-label), ui-monospace, monospace; font-size: 12px; line-height: 1.5;
+  letter-spacing: 0.18em; text-transform: uppercase; text-shadow: none;
+}
+.gg-speaker-ghost { color: #ff3b4e; } /* about 6:1 on black */
+.gg-speaker-you { color: #8a857a; }
+.gg .gg-log .gg-you {
+  display: block; margin: 0 0 6px; padding: 0; max-width: none; width: auto; text-align: left; background: none; border: 0; box-shadow: none;
+  font-family: var(--font-label), ui-monospace, monospace; font-size: 15px; line-height: 1.6; letter-spacing: 0.02em; color: #9c968a; text-shadow: none;
+}
+.gg-you-text::before { content: "> "; color: #5a554c; }
+.gg-you-text { overflow-wrap: anywhere; }
+.gg .gg-log .gg-turn + .gg-turn { margin-top: 12px; padding-top: 12px; border-top: 1px solid #1d1b18; background: none; }
+.gg-next { display: block; text-align: right; color: #ff3b4e; font-size: 11px; line-height: 1; animation: gg-next 1.1s steps(2) infinite; }
+@keyframes gg-next { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gg-next { animation: none; } }
+.gg .gg-askrow .rpg-input {
+  background: #000; color: #e4dfd2; caret-color: #c8102e; border: 1px solid #6e685c; border-radius: 0; box-shadow: none; padding: 0 12px;
+  font-family: var(--font-label), ui-monospace, monospace; font-size: 15px; letter-spacing: 0.02em; text-shadow: none;
+}
+.gg .gg-askrow .rpg-input::placeholder { color: #5f5a50; }
+.gg .gg-askrow .rpg-input:focus-visible { outline: 2px solid #c8102e; outline-offset: 2px; border-color: #b9b2a2; }
+
+/* ================= Horror form: distortion, bleeding, watching eyes ================= */
+/* 1. Distortion: the figure is mostly still, then tears for a few frames (offset, skew, red/teal split). */
+.gg[data-form="horror"] .gg-ghostwrap .sprite { animation: gg-hdistort 5.3s steps(1) infinite; }
+@keyframes gg-hdistort {
+  0%, 61%, 66%, 88%, 100% { transform: none; filter: none; clip-path: none; }
+  62% { transform: translateX(calc(2 * var(--a))) skewX(-6deg); filter: drop-shadow(calc(-2 * var(--a)) 0 0 rgba(200, 16, 46, 0.75)) drop-shadow(calc(2 * var(--a)) 0 0 rgba(60, 200, 180, 0.35)); }
+  63% { transform: translateX(calc(-3 * var(--a))); clip-path: polygon(0 0, 100% 0, 100% 38%, 0 38%, 0 46%, 100% 46%, 100% 100%, 0 100%); }
+  64% { transform: translate(var(--a), calc(-1 * var(--a))) scaleY(1.04); filter: brightness(1.6) contrast(1.4); }
+  65% { transform: translateX(calc(-1 * var(--a))) skewX(4deg); filter: drop-shadow(calc(3 * var(--a)) 0 0 rgba(200, 16, 46, 0.6)); }
+  89% { transform: scaleX(0.97) translateX(var(--a)); filter: drop-shadow(calc(-1 * var(--a)) 0 0 rgba(200, 16, 46, 0.6)); }
+}
+/* the room flickers with it */
+.gg[data-form="horror"] .gg-vignette { animation: gg-hflicker 5.3s steps(1) infinite; }
+@keyframes gg-hflicker { 0%, 61%, 66%, 100% { opacity: 1; } 62% { opacity: 0.55; } 64% { opacity: 1.0; filter: brightness(0.5); } }
+
+/* 2. Bleeding: a run grows down from a wound, then a drop falls off its end. */
+.gg-bleed { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.gg-bleed-run {
+  position: absolute; width: var(--a); transform-origin: top; transform: scaleY(0);
+  background: linear-gradient(#5e0010, #a3081f 70%, #c8102e);
+  animation: gg-bleed-run 6s steps(12) infinite;
+}
+.gg-bleed-run::before { content: ""; position: absolute; left: calc(-1 * var(--a)); top: 0; width: calc(3 * var(--a)); height: calc(2 * var(--a)); background: #7a0516; }
+@keyframes gg-bleed-run { 0% { transform: scaleY(0); opacity: 1; } 55% { transform: scaleY(1); opacity: 1; } 85% { transform: scaleY(1); opacity: 0.9; } 100% { transform: scaleY(1); opacity: 0; } }
+.gg-bleed-drop {
+  position: absolute; left: calc(-0.5 * var(--a)); top: 100%; width: calc(2 * var(--a)); height: calc(2 * var(--a)); background: #c8102e; opacity: 0;
+  animation: gg-bleed-drop 6s steps(10) infinite;
+}
+@keyframes gg-bleed-drop { 0%, 55% { opacity: 0; transform: none; } 58% { opacity: 1; transform: none; } 80% { opacity: 1; transform: translateY(calc(30 * var(--a))); } 81%, 100% { opacity: 0; transform: translateY(calc(30 * var(--a))); } }
+
+/* 3. Watching eyes: closed, they open, stare, blink twice and close again, each on its own clock. */
+.gg-eyes { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.gg-eye { position: absolute; display: block; transform: scaleY(0); opacity: 0.85; filter: drop-shadow(0 0 6px rgba(179, 18, 42, 0.55)); animation: gg-eye 8s steps(1) infinite; }
+@keyframes gg-eye {
+  0%, 30% { transform: scaleY(0); }
+  32% { transform: scaleY(0.4); }
+  34%, 56% { transform: scaleY(1); }
+  57% { transform: scaleY(0.1); }
+  58%, 70% { transform: scaleY(1); }
+  71% { transform: scaleY(0.1); }
+  72%, 84% { transform: scaleY(1); }
+  86% { transform: scaleY(0.4); }
+  88%, 100% { transform: scaleY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg[data-form="horror"] .gg-ghostwrap .sprite, .gg[data-form="horror"] .gg-vignette, .gg-bleed-run, .gg-bleed-drop, .gg-eye { animation: none !important; }
+  .gg-bleed-run { transform: scaleY(1); }
+  .gg-bleed-drop { display: none; }
+  .gg-eye { transform: scaleY(1); opacity: 0.6; }
+}
+
+/* ================= V7: immersion pass — the scene is the screen, the UI is a game window ================= */
+/* Palette: warm void black, worn bone, candle gold, blood red. Teal is gone; a sick green is kept only for small accents.
+   Every text colour holds 4.5:1 or better on --win. */
+.gg {
+  --void: #050304; --win: #090607; --win-2: #120b0c; --rim: #2c1f1b; --frame: #a69d8b;
+  --blood: #8e0f1f; --blood-text: #ff5866;
+  --bone: #e2d8c3; --bone-dim: #a99f8b; --gold: #d0a95f; --teal: #93a97c;
+  --crimson: #7a1622; --crimson-text: #ff8a93; --purple-text: #bba9cc;
+  background: var(--void);
+}
+.gg * { scrollbar-color: #3a2a24 transparent; }
+
+/* --- desktop: the stage runs under both panels; the panels and the dialogue float over it --- */
+@media (min-width: 1024px) {
+  .gg { --lw: clamp(236px, 18vw, 276px); --rw: clamp(256px, 21vw, 316px); grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw); }
+  .gg-center { grid-column: 1 / -1; grid-row: 2; }
+  .gg .gg-left, .gg .gg-right { z-index: 6; margin: 14px 14px 14px; }
+  .gg .gg-dlg { left: var(--lw); right: var(--rw); bottom: 14px; }
+  /* the edges of the room sink into the dark behind the windows */
+  .gg-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: linear-gradient(90deg, rgba(5, 3, 4, 0.85), transparent 22%, transparent 78%, rgba(5, 3, 4, 0.85)); }
+}
+
+/* --- one window language: black glass, a worn bone line, a blood hairline inside, a hard drop shadow --- */
+.gg .gg-left, .gg .gg-right, .gg .gg-era {
+  background-color: rgba(9, 6, 7, 0.9);
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(120, 20, 30, 0.08), transparent 60%), radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.7), transparent 60%);
+  box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--frame), inset 0 0 0 4px #000, inset 0 0 0 5px rgba(142, 15, 31, 0.6), 6px 6px 0 0 rgba(0, 0, 0, 0.55);
+}
+.gg .gg-left, .gg .gg-right { padding: 16px 16px 14px; }
+@media (max-width: 1023px) { .gg .gg-left, .gg .gg-right { background-color: #090607; } }
+/* the corner studs become dried blood */
+.gg-left::before, .gg-right::before, .gg-dlg-box::before {
+  --st: var(--blood-text);
+  background:
+    linear-gradient(var(--st), var(--st)) 0 0 / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 0 0 / 2px 6px no-repeat,
+    linear-gradient(var(--st), var(--st)) 100% 0 / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 100% 0 / 2px 6px no-repeat,
+    linear-gradient(var(--st), var(--st)) 0 100% / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 0 100% / 2px 6px no-repeat,
+    linear-gradient(var(--st), var(--st)) 100% 100% / 6px 2px no-repeat, linear-gradient(var(--st), var(--st)) 100% 100% / 2px 6px no-repeat;
+  inset: 6px; opacity: 0.5;
+}
+.gg .gg-side-head { border-bottom: 0; padding-bottom: 10px; }
+.gg .gg-side-head::after { height: 2px; bottom: 0; opacity: 1; background: linear-gradient(90deg, var(--blood), rgba(142, 15, 31, 0.15)); }
+.gg .gg-side-head .rpg-title { color: var(--bone); text-shadow: 2px 2px 0 #3a060d; letter-spacing: 0.1em; }
+
+/* --- top bar: a thin black strip with a blood seam --- */
+.gg .gg-top { background: #030202; border-bottom: 2px solid #1a0f0e; box-shadow: 0 2px 0 0 rgba(142, 15, 31, 0.45); }
+.gg .gg-title { color: var(--bone); text-shadow: 2px 2px 0 #3a060d; letter-spacing: 0.06em; }
+.gg .gg-banner { color: var(--bone-dim); }
+.gg-phone-only { display: inline-block; }
+@media (min-width: 640px) { .gg-phone-only { display: none !important; } }
+
+/* --- buttons: bone lines on black; the one that acts is blood --- */
+.gg .rpg-btn { --bc: #4a3a32; background-color: #0a0607; background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.4)); color: var(--bone); }
+.gg .rpg-btn:hover:not(:disabled) { --bc: var(--frame); background-color: #160c0d; color: #fff; }
+.gg .rpg-btn-primary { --bc: var(--blood); background-color: #1c0609; color: #f4ddd6; }
+.gg .rpg-btn-primary:hover:not(:disabled) { --bc: var(--blood-text); background-color: #2c080d; }
+.gg .rpg-tag.tag-reading { color: var(--bone-dim); }
+
+/* --- the stage chip: a small black plaque --- */
+.gg .gg-era { top: 14px; padding: 6px 14px; gap: 8px; font-family: var(--font-label), monospace; font-size: 13px; letter-spacing: 0.04em; }
+.gg .gg-era .gg-sha { color: var(--gold); font-size: 13px; }
+.gg .gg-era[data-past] { box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--blood-text), inset 0 0 0 4px #000, 6px 6px 0 0 rgba(0, 0, 0, 0.55); }
+@media (max-width: 639px) { .gg .gg-era { white-space: nowrap; flex-wrap: nowrap; font-size: 12px; padding: 5px 10px; } }
+
+/* --- Haunted Archive: an entry in a bestiary --- */
+.gg .gg-h { color: var(--bone-dim); letter-spacing: 0.14em; }
+.gg .gg-big { color: var(--bone); font-size: 19px; text-shadow: 2px 2px 0 #000; }
+.gg .gg-place { color: var(--teal); letter-spacing: 0.1em; }
+.gg .gg-dl { gap: 0; grid-template-columns: auto 1fr; font-size: 14px; }
+.gg .gg-dl dt, .gg .gg-dl dd { padding: 7px 0; border-bottom: 1px dashed #2c1f1b; margin: 0; }
+.gg .gg-dl dt { font-family: var(--font-label), monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; padding-right: 12px; color: var(--bone-dim); }
+.gg .gg-link { color: var(--gold); }
+
+/* the dread mark: five pips, a word. It follows the ghost's form only. */
+.gg-dread { display: grid; grid-template-columns: auto 1fr; align-items: center; row-gap: 6px; margin: 4px 0 10px; padding: 8px 10px; background: #050304; box-shadow: inset 0 0 0 1px #2c1f1b; }
+.gg-dread-label { font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--bone-dim); }
+.gg-dread-pips { grid-column: 1 / -1; grid-row: 2; display: flex; gap: 3px; }
+.gg-dread-pips span { flex: 1; height: 10px; background: #1c1312; box-shadow: inset 0 0 0 1px #3a2a24; }
+.gg-dread-pips span[data-lit] { background: linear-gradient(#ff5866, #8e0f1f); box-shadow: inset 0 0 0 1px #2a0306; }
+.gg-dread-word { justify-self: end; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blood-text); }
+.gg-dread[data-form="human"] .gg-dread-word { color: var(--bone-dim); }
+.gg-dread[data-form="horror"] .gg-dread-pips span[data-lit] { animation: gg-dread 2.6s steps(1) infinite; }
+.gg-dread[data-form="horror"] .gg-dread-pips span[data-lit]:nth-child(2n) { animation-delay: 0.3s; }
+@keyframes gg-dread { 0%, 70%, 100% { opacity: 1; } 72% { opacity: 0.3; } 74% { opacity: 1; } 76% { opacity: 0.5; } }
+
+/* --- Memory Journal: an epitaph, then a row of graves --- */
+.gg .gg-journal-top { border-bottom: 0; }
+.gg .gg-life { text-align: center; justify-items: center; padding: 10px; background: none;
+  box-shadow: inset 0 2px 0 0 var(--rim), inset 0 4px 0 0 #000, inset 0 5px 0 0 var(--rim), inset 0 -2px 0 0 var(--rim), inset 0 -4px 0 0 #000, inset 0 -5px 0 0 var(--rim); }
+.gg .gg-life-row { justify-content: center; font-size: 13px; }
+.gg .gg-life .gg-date { color: var(--bone); font-family: var(--font-label), monospace; }
+.gg .gg-context { background: #050304; box-shadow: inset 0 0 0 1px var(--rim), inset 3px 0 0 0 var(--blood); }
+.gg .gg-past { background: #1a0609; box-shadow: inset 0 0 0 2px var(--blood); }
+.gg .gg-return { background: #1c0609; box-shadow: inset 0 0 0 2px var(--blood-text); }
+.gg .gg-return:hover { background: #2c080d; }
+
+.gg .gg-timeline > li::before { background: repeating-linear-gradient(var(--rim) 0 6px, transparent 6px 10px); }
+/* a small grave cross on the rail instead of a dot */
+.gg .gg-timeline .gg-memory .gg-node-dot {
+  width: 10px; height: 14px; left: -18px; top: 12px; box-shadow: none; color: #5a4a40; background-color: transparent;
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-size: 2px 100%, 100% 2px, 6px 2px; background-position: 50% 0, 0 30%, 50% 100%; background-repeat: no-repeat;
+}
+.gg .gg-timeline .gg-memory[data-present] .gg-node-dot { color: var(--gold); background-color: transparent; }
+.gg .gg-timeline .gg-memory[data-selected] .gg-node-dot { color: var(--blood-text); background-color: transparent; filter: drop-shadow(0 0 4px rgba(255, 88, 102, 0.6)); }
+.gg .gg-timeline .gg-memory:hover { background: rgba(60, 30, 26, 0.35); }
+.gg .gg-timeline .gg-memory[data-selected] { background: linear-gradient(90deg, rgba(120, 12, 26, 0.38), rgba(120, 12, 26, 0.06)); box-shadow: inset 2px 0 0 0 var(--blood-text); }
+/* the RPG cursor: every date keeps room for it, the chosen memory shows it */
+.gg .gg-memory .gg-date::before { content: "▶"; display: inline-block; width: 1.4em; color: transparent; }
+.gg .gg-memory:hover .gg-date::before, .gg .gg-memory:focus-visible .gg-date::before { color: var(--bone-dim); }
+.gg .gg-memory[data-selected] .gg-date::before { color: var(--blood-text); animation: gg-blink 1s steps(1) infinite; }
+.gg .gg-memory .gg-msg { padding-left: 1.4em; }
+.gg .gg-memory .gg-memory-tags { padding-left: 1.65em; }
+.gg .gg-memory .gg-sha { color: var(--gold); }
+.gg .gg-memory:focus-visible { outline-color: var(--blood-text); }
+
+/* --- dialogue: same window as the panels --- */
+.gg .gg-dlg .gg-dlg-box, .gg .gg-dlg .gg-dlg-tab { border-color: var(--frame); }
+.gg .gg-dlg .gg-dlg-box { box-shadow: 0 0 0 2px #000, inset 0 0 0 2px #000, inset 0 0 0 3px rgba(142, 15, 31, 0.6), inset 0 0 40px rgba(0, 0, 0, 0.9), 6px 6px 0 0 rgba(0, 0, 0, 0.55); }
+.gg .gg-portrait { background: #050304; box-shadow: 0 0 0 2px var(--frame), 0 0 0 4px #000, 0 0 0 5px rgba(142, 15, 31, 0.6); }
+.gg .gg-dlg[data-talking] .gg-portrait { box-shadow: 0 0 0 2px var(--blood-text), 0 0 0 4px #000, 0 0 12px 4px rgba(142, 15, 31, 0.45); }
+.gg .gg-askrow .rpg-input { border-color: #4a3a32; }
+.gg .gg-askrow::before { color: var(--blood-text); animation: gg-blink 1.1s steps(1) infinite; }
+.gg .gg-askrow .rpg-input:focus-visible { outline-color: var(--blood-text); }
+.gg .gg-skip { color: var(--bone-dim); box-shadow: inset 0 0 0 1px #4a3a32; }
+
+/* --- the room breathes: a slow pulse of red at the edges once the ghost has changed --- */
+.gg[data-form="distorted"] .gg-tone, .gg[data-form="horror"] .gg-tone { animation: gg-breathe 7s ease-in-out infinite; }
+@keyframes gg-breathe { 0%, 100% { box-shadow: inset 0 0 120px 20px rgba(90, 0, 12, 0.15); } 50% { box-shadow: inset 0 0 160px 50px rgba(110, 0, 16, 0.32); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-dread-pips span, .gg .gg-memory .gg-date::before, .gg .gg-askrow::before, .gg .gg-tone { animation: none !important; }
+}
+
+/* ================= V8: the first encounter — beats with a ▼, then a ▶ choice menu ================= */
+.gg-beat + .gg-beat { margin-top: 6px; }
+.gg-beat-next {
+  display: block; margin: 2px 0 0 auto; min-width: 44px; min-height: 32px; padding: 0 10px; background: none; border: 0; cursor: pointer;
+  font-size: 14px; line-height: 1; color: var(--blood-text); animation: gg-next 1.1s steps(2) infinite;
+}
+.gg-beat-next:hover, .gg-beat-next:focus-visible { color: var(--bone); }
+.gg-beat-next:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+
+.gg-menu { list-style: none; margin: 0; padding: 6px 0 0; display: grid; grid-template-columns: 1fr; gap: 2px; border-top: 1px solid #2a1d1a; }
+@media (min-width: 640px) { .gg-menu { grid-template-columns: 1fr 1fr; column-gap: 12px; } }
+.gg-menu-item {
+  position: relative; width: 100%; min-height: 36px; padding: 4px 8px 4px 24px; text-align: left; cursor: pointer; background: none; border: 0;
+  font-family: var(--font-label), monospace; font-size: 13px; line-height: 1.3; letter-spacing: 0.02em; color: var(--bone-dim);
+}
+.gg-menu-item::before { content: "▶"; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 11px; color: transparent; }
+.gg-menu-item:hover, .gg-menu-item:focus-visible { color: var(--bone); background: linear-gradient(90deg, rgba(120, 12, 26, 0.32), transparent); outline: none; }
+.gg-menu-item:hover::before, .gg-menu-item:focus-visible::before { color: var(--blood-text); animation: gg-blink 1s steps(1) infinite; }
+.gg-menu-item:focus-visible { box-shadow: inset 2px 0 0 0 var(--blood-text); }
+.gg-menu-item[data-choice="other"] { color: #7d7466; font-style: normal; }
+@media (max-width: 1023px) { .gg-menu-item { min-height: 44px; } }
+/* phones: the box for typing is right below, so "Say something else" is not repeated */
+@media (max-width: 639px) { .gg-menu li:has([data-choice="other"]) { display: none; } .gg-menu-item { font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .gg-beat-next, .gg-menu-item::before { animation: none !important; } }
+/* phones: the dialogue is a grid (portrait | conversation, then the input); the menu gets a full-width row between them */
+@media (max-width: 639px) {
+  .gg-dlg-box:has(.gg-menu) { grid-template-rows: minmax(3.5rem, 1fr) auto auto; }
+  .gg-menu { grid-column: 1 / -1; grid-row: 2; }
+  .gg-dlg-box:has(.gg-menu) .gg-form { grid-row: 3; }
+}
+.gg-log[data-opening] { cursor: pointer; }
+
+/* ================= V8.1: a slimmer question row, so the dialogue shows more text ================= */
+.gg .gg-form { gap: 2px; }
+.gg .gg-askrow { gap: 6px; flex-wrap: nowrap; }
+.gg .gg-askrow .rpg-input { min-height: 32px; height: 32px; padding: 0 10px 0 26px; font-size: 13px; }
+.gg .gg-askrow::before { left: 10px; font-size: 10px; }
+.gg .gg-askrow .rpg-btn { min-height: 32px !important; height: 32px; min-width: 0; margin: 2px; padding: 0 12px !important; font-size: 11px !important; }
+/* phones keep a comfortable touch height */
+@media (max-width: 1023px) {
+  .gg .gg-askrow .rpg-input { min-height: 40px; height: 40px; }
+  .gg .gg-askrow .rpg-btn { min-height: 40px !important; height: 40px; }
+}
+
+/* ================= V10: Possession — the ghost's code over the scene ================= */
+.gg-stage[data-possessed] .gg-world { opacity: 0.16; filter: saturate(0.4); transition: opacity 0.4s steps(4); }
+.gg-stage[data-possessed] .gg-eyes, .gg-stage[data-possessed] .gg-era { opacity: 0.35; }
+.gg-possess {
+  position: absolute; z-index: 4; left: 8px; right: 8px; top: 8px; bottom: 8px; display: flex; flex-direction: column; min-height: 0;
+  background: rgba(5, 3, 4, 0.94);
+  box-shadow: 0 0 0 2px #000, inset 0 0 0 2px var(--frame), inset 0 0 0 4px #000, inset 0 0 0 5px rgba(142, 15, 31, 0.6), 0 0 60px rgba(90, 0, 12, 0.35);
+  animation: gg-possess-in 0.5s steps(5) both;
+}
+@media (min-width: 1024px) { .gg-possess { left: calc(var(--lw) + 4px); right: calc(var(--rw) + 4px); top: 60px; bottom: calc(var(--dlg-h) + 34px); } }
+@keyframes gg-possess-in { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+.gg-possess-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; border-bottom: 1px solid #2a1d1a; min-width: 0; }
+.gg-possess-title { margin: 0; font-family: var(--font-pixel), monospace; font-size: 12px; color: var(--bone); text-shadow: 2px 2px 0 #3a060d; white-space: nowrap; }
+.gg-possess-back, .gg-possess-leave { flex: none; min-height: 32px; padding: 0 8px; background: none; border: 0; cursor: pointer; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bone-dim); }
+.gg-possess-back:hover, .gg-possess-leave:hover, .gg-possess-back:focus-visible, .gg-possess-leave:focus-visible { color: var(--bone); }
+.gg-possess-leave { margin-left: auto; font-size: 14px; }
+.gg-possess-path { flex: 1; min-width: 0; margin: 0; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.04em; color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.gg-possess-gh { flex: none; font-size: 12px; }
+@media (max-width: 1023px) { .gg-possess-back, .gg-possess-leave { min-height: 44px; } }
+
+/* its body: search and the file list */
+.gg-possess-body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 10px 12px; gap: 6px; }
+.gg-possess-search .rpg-input { width: 100%; height: 32px; min-height: 32px; font-family: var(--font-label), monospace; font-size: 13px; background: #000; color: var(--bone); box-shadow: inset 0 0 0 1px #4a3a32; }
+.gg-possess-search .rpg-input:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
+.gg-possess-count { margin: 0; font-size: 12px; color: var(--bone-dim); font-family: var(--font-label), monospace; }
+.gg-possess-files { list-style: none; margin: 0; padding: 0 4px 0 0; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 1px; }
+.gg-possess-files button { width: 100%; min-height: 30px; padding: 4px 8px 4px 22px; position: relative; text-align: left; background: none; border: 0; cursor: pointer; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.3; color: var(--bone); overflow-wrap: anywhere; }
+.gg-possess-files button::before { content: "▶"; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 10px; color: transparent; }
+.gg-possess-files button:hover, .gg-possess-files button:focus-visible { background: linear-gradient(90deg, rgba(120, 12, 26, 0.32), transparent); outline: none; }
+.gg-possess-files button:hover::before, .gg-possess-files button:focus-visible::before { color: var(--blood-text); }
+.gg-possess-dir { color: #8a7f6c; }
+@media (max-width: 1023px) { .gg-possess-files button { min-height: 40px; } }
+
+/* one file: numbered lines; chosen lines are lit in blood */
+.gg-possess-file { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.gg-possess-msg { padding: 12px; }
+.gg-code { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 6px 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.55; color: #d9cfbb; background: #030202; }
+.gg-code-line { display: flex; min-width: max-content; cursor: pointer; }
+.gg-code-line:hover { background: rgba(60, 30, 26, 0.45); }
+.gg-code-line[aria-selected="true"] { background: rgba(120, 12, 26, 0.42); box-shadow: inset 3px 0 0 0 var(--blood-text); }
+.gg-code-line:focus-visible { outline: 1px solid var(--blood-text); outline-offset: -1px; }
+.gg-code-n { flex: none; width: 4.5em; padding-right: 12px; text-align: right; color: #5f564b; user-select: none; }
+.gg-code-line[aria-selected="true"] .gg-code-n { color: var(--blood-text); }
+.gg-code-t { white-space: pre; padding-right: 16px; }
+.gg-possess-foot { flex: none; margin: 0; padding: 6px 12px 8px; border-top: 1px solid #2a1d1a; font-family: var(--font-label), monospace; font-size: 12px; color: var(--bone-dim); }
+.gg-body-btn { width: calc(100% - 8px); margin-top: 10px !important; justify-content: center; font-size: 12px !important; }
+@media (prefers-reduced-motion: reduce) { .gg-possess { animation: none; } .gg-stage[data-possessed] .gg-world { transition: none; } }
+/* phones: while its code is open, the dialogue gives the code more of the screen */
+@media (max-width: 1023px) { .gg:has(.gg-stage[data-possessed]) .gg-dlg { max-height: 40dvh; } }
+/* focusing a code line must never scroll the scene itself: clip, unlike hidden, is not a scroll container */
+.gg-stage { overflow: clip; }
+
+/* ================= V11: the code map beside the file ================= */
+.gg-possess-file { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+.gg-map-toggle { display: none; }
+.gg-map { grid-column: 1; grid-row: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 6px 4px 6px 8px; border-right: 1px solid #2a1d1a; background: #050304; }
+.gg-possess-file .gg-code { grid-column: 2; grid-row: 1; }
+.gg-possess-file .gg-possess-foot { grid-column: 1 / -1; grid-row: 2; }
+.gg-possess-file[data-map="false"] { grid-template-columns: minmax(0, 1fr); }
+.gg-possess-file[data-map="false"] .gg-map { display: none; }
+.gg-possess-file[data-map="false"] .gg-code { grid-column: 1; }
+.gg-map-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.gg-map-list button { width: 100%; min-height: 26px; display: flex; align-items: baseline; gap: 6px; padding: 2px 6px; text-align: left; background: none; border: 0; cursor: pointer; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; line-height: 1.35; color: var(--bone-dim); }
+.gg-map-list button:hover, .gg-map-list button:focus-visible { color: var(--bone); background: rgba(60, 30, 26, 0.45); outline: none; }
+.gg-map-list button:focus-visible { box-shadow: inset 2px 0 0 0 var(--blood-text); }
+.gg-map-list button[aria-pressed="true"] { color: var(--bone); background: rgba(120, 12, 26, 0.42); box-shadow: inset 2px 0 0 0 var(--blood-text); }
+.gg-map-glyph { flex: none; width: 1em; text-align: center; color: var(--gold); }
+.gg-map-name { overflow-wrap: anywhere; }
+.gg-map-note, .gg-map-empty { margin: 2px 4px 6px; font-family: var(--font-label), monospace; font-size: 11px; line-height: 1.4; color: #8a7f6c; }
+/* phones and tablets: the map folds away behind a toggle and opens over the code */
+@media (max-width: 1023px) {
+  .gg-possess-file { grid-template-columns: minmax(0, 1fr); }
+  .gg-possess-file .gg-code { grid-column: 1; }
+  .gg-possess-gh { margin-right: 58px; } /* room for the Map toggle, which sits over the header's right end */
+  .gg-map-toggle { display: block; position: absolute; right: 52px; top: 10px; z-index: 2; min-height: 44px; padding: 0 10px; background: none; border: 0; cursor: pointer; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .gg-map { display: none; grid-column: 1; grid-row: 1; z-index: 1; border-right: 0; border-bottom: 1px solid #2a1d1a; }
+  .gg-possess-file[data-map="true"] .gg-map { display: block; }
+  .gg-map-list button { min-height: 40px; }
+}
+
+/* ================= V12: a living repository's ghost ================= */
+/* Still committed to: no dread, a living colour, and a warmer arrival card. */
+.gg-dread[data-alive] .gg-dread-word { color: var(--teal); }
+.gg-arrive-card[data-alive] span { color: #e4c18b; }
+.gg-arrive-card[data-alive] b { text-shadow: 3px 3px 0 #000, 0 0 18px rgba(228, 193, 139, 0.45); }
+
+/* ================= V14: the Specialist and its Code Record ================= */
+/* lines the Specialist commented on: a gold mark in the gutter */
+.gg-code-line[data-marked] .gg-code-n { color: var(--gold); box-shadow: inset -2px 0 0 0 var(--gold); }
+.gg-record { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; overflow-wrap: anywhere; }
+.gg-record-meta { margin: 0 0 6px; font-size: 13px; line-height: 1.5; color: var(--bone-dim); }
+.gg-record-summary { margin: 0; font-size: 16px; line-height: 1.5; color: var(--bone); }
+.gg-record-obs { margin: 4px 0 0; padding-left: 20px; display: grid; gap: 10px; }
+.gg-record-obs p { margin: 0 0 2px; font-size: 15px; line-height: 1.45; }
+.gg-record-unsure { margin: 4px 0 0; padding-left: 18px; font-size: 14px; color: var(--bone-dim); font-style: italic; }
+.gg-record-next { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+/* "Where else is this used?" */
+.gg-possess-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.gg-possess-where { margin-left: auto; min-height: 28px; padding: 0 8px; cursor: pointer; background: none; border: 0; box-shadow: inset 0 0 0 1px #4a3a32; font-family: var(--font-label), monospace; font-size: 12px; color: var(--gold); }
+.gg-possess-where:hover, .gg-possess-where:focus-visible { box-shadow: inset 0 0 0 1px var(--gold); color: var(--bone); outline: none; }
+.gg-possess-where code { font-family: ui-monospace, Menlo, monospace; }
+@media (max-width: 1023px) { .gg-possess-where { min-height: 44px; } }

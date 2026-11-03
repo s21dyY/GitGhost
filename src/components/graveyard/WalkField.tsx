@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
-import { useReducedMotion } from "@/components/v4/anim";
+import { useReducedMotion } from "@/components/game/anim";
 import { playSfx } from "@/lib/sound";
 import { PresenceShape } from "./Presence";
 import { originOf, useSummon } from "./SummonProvider";

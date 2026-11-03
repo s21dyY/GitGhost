@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "check:browser": "node scripts/browser-check.mts",
-    "check:chat-browser": "node scripts/chat-browser-check.mts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "3.1161.0",

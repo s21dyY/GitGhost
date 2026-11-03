@@ -1,0 +1,2 @@
+# Historical (superseded 2026-11-02)
+The one-call V6 smoke-test runners in this folder (`v6-preflight.sh`, `v6-run.sh`) belong to the cancelled "one live call per day, separate approval per call" plan. See `.kiro/steering/decisions.md` (D1) and `docs/history/V6_BEDROCK.md`. They are kept as a record and were not changed. `live-session.sh`, `serve-mock.sh` and `profiles/` are local development helpers and are not covered by this note.

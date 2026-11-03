@@ -3,16 +3,16 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /** Static checks of the local live-session script. It is not executed here; nothing in this file can reach AWS. */
-const s = readFileSync(join(process.cwd(), "infra/v6/live-session.sh"), "utf8");
+const s = readFileSync(join(process.cwd(), "infra/history/v6/live-session.sh"), "utf8");
 
-describe("infra/v6/live-session.sh", () => {
+describe("infra/history/v6/live-session.sh", () => {
   it("is a dry run unless --execute AND the exact typed authorization are present", () => {
     expect(s).toContain('if [ "$EXECUTE" != 1 ]; then');
     expect(s).toContain("I_AUTHORIZE_A_LIVE_DEMO_SESSION_UP_TO_8_REQUESTS_AND_0.006_USD");
     expect(s.indexOf("DRY RUN")).toBeLessThan(s.indexOf("GITGHOST_LIVE_SESSION_AUTHORIZED:-"));
   });
   it("uses the existing demo profile unchanged: it exports it into the server's shell and never edits .env.local", () => {
-    expect(s).toContain("PROFILE_FILE=infra/v6/profiles/demo.env");
+    expect(s).toContain("PROFILE_FILE=infra/history/v6/profiles/demo.env");
     expect(s).toContain('. "$PROFILE_FILE"');
     expect(s).not.toMatch(/>>?\s*\.env/);
     expect(s).toContain("CAP=8");
@@ -47,8 +47,8 @@ describe("infra/v6/live-session.sh", () => {
   });
 });
 
-describe("infra/v6/serve-mock.sh", () => {
-  const m = readFileSync(join(process.cwd(), "infra/v6/serve-mock.sh"), "utf8");
+describe("infra/history/v6/serve-mock.sh", () => {
+  const m = readFileSync(join(process.cwd(), "infra/history/v6/serve-mock.sh"), "utf8");
   it("forces the scripted provider and a closed Bedrock whatever .env.local says", () => {
     expect(m).toContain("GITGHOST_CHAT_PROVIDER=mock");
     expect(m).toContain("GITGHOST_BEDROCK_ENABLED=false");

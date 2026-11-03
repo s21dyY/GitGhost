@@ -13,7 +13,7 @@ import { checkCeilings, getPlan, PLANS } from "./validation-harness";
  * are fixed, and the billable path must run as the restricted AWS profile.
  *
  * HISTORICAL (2026-11-02). The one-call-per-day, separately approved V6 plan was cancelled by the owner; see
- * .kiro/steering/decisions.md (D1) and infra/v6/HISTORICAL.md. The suites that pin that plan's ceilings and runner are
+ * .kiro/steering/decisions.md (D1) and infra/history/v6/HISTORICAL.md. The suites that pin that plan's ceilings and runner are
  * skipped (describe.skip), not edited to pass: they document the retired plan, and three of them fail against the
  * runner as it now stands (its request-per-day value no longer matches the plan's ceiling of 1). The plan and runner are
  * kept as a record, so these tests are kept too. The GITGHOST_BEDROCK_AWS_PROFILE suite checks current config code
@@ -128,22 +128,22 @@ historical("USD 0.02 is a safety ceiling, not permission for more requests", () 
     expect(checkCeilings({ ...LIVE_ENV, GITGHOST_DAILY_BUDGET_USD: "0.021" }, V6).join(" ")).toMatch(/Daily budget/);
   });
   it("the runner passes REQUESTS_PER_DAY=1 and invokes the live test exactly twice: once refused by the kill switch, once for the call", () => {
-    const s = readFileSync(join(process.cwd(), "infra/v6/v6-run.sh"), "utf8");
+    const s = readFileSync(join(process.cwd(), "infra/history/v6/v6-run.sh"), "utf8");
     expect(s).toContain("GITGHOST_CHAT_REQUESTS_PER_DAY=100");
     expect(s.match(/"\$\{RUNNER\[@\]\}"/g)?.length).toBe(2);
     expect(s).not.toMatch(/for .* in .*; do[\s\S]*RUNNER/); // no loop around the invocation
     expect(s).toContain("no retries, no loop");
   });
   it("the authorization string names the ceiling and one call only", () => {
-    const s = readFileSync(join(process.cwd(), "infra/v6/v6-run.sh"), "utf8");
+    const s = readFileSync(join(process.cwd(), "infra/history/v6/v6-run.sh"), "utf8");
     expect(s).toContain("I_AUTHORIZE_ONE_NOVA_LITE_V6_CALL_UP_TO_0.02_USD");
   });
 });
 
 historical("the V6 runner scripts (static checks; they were not executed)", () => {
-  const read = (f: string) => readFileSync(join(process.cwd(), "infra/v6", f), "utf8");
+  const read = (f: string) => readFileSync(join(process.cwd(), "infra/history/v6", f), "utf8");
   it("exist", () => {
-    for (const f of ["v6-preflight.sh", "v6-run.sh"]) expect(existsSync(join(process.cwd(), "infra/v6", f)), f).toBe(true);
+    for (const f of ["v6-preflight.sh", "v6-run.sh"]) expect(existsSync(join(process.cwd(), "infra/history/v6", f)), f).toBe(true);
   });
   it("the runner is a dry run unless --execute AND the typed V6 authorization are both present, and re-locks on exit", () => {
     const s = read("v6-run.sh");

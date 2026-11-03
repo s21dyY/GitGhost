@@ -121,7 +121,7 @@ const REF_WORD = /\bE\d{1,2}\b/g;
 /**
  * Every number, date and version a factual segment states must literally appear in the evidence it
  * cites. This is what stops a model that cites a real item from adding a made-up date, count or version.
- * Spelled-out numbers ("three issues") cannot be checked this way; see docs/AI_READINESS.md.
+ * Spelled-out numbers ("three issues") cannot be checked this way; see docs/history/AI_READINESS.md.
  */
 function numbersSupported(text: string, haystack: string): boolean {
   const flat = haystack.replace(/(\d),(?=\d{3}\b)/g, "$1");
