@@ -951,6 +951,7 @@
 @media (max-width: 1023px) {
   .v4-possess-file { grid-template-columns: minmax(0, 1fr); }
   .v4-possess-file .v4-code { grid-column: 1; }
+  .v4-possess-gh { margin-right: 58px; } /* room for the Map toggle, which sits over the header's right end */
   .v4-map-toggle { display: block; position: absolute; right: 52px; top: 10px; z-index: 2; min-height: 44px; padding: 0 10px; background: none; border: 0; cursor: pointer; font-family: var(--font-label), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .v4-map { display: none; grid-column: 1; grid-row: 1; z-index: 1; border-right: 0; border-bottom: 1px solid #2a1d1a; }
   .v4-possess-file[data-map="true"] .v4-map { display: block; }
@@ -966,10 +967,16 @@
 /* ================= V14: the Specialist and its Code Record ================= */
 /* lines the Specialist commented on: a gold mark in the gutter */
 .v4-code-line[data-marked] .v4-code-n { color: var(--gold); box-shadow: inset -2px 0 0 0 var(--gold); }
-.v4-record { display: grid; gap: 4px; }
+.v4-record { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; overflow-wrap: anywhere; }
 .v4-record-meta { margin: 0 0 6px; font-size: 13px; line-height: 1.5; color: var(--bone-dim); }
 .v4-record-summary { margin: 0; font-size: 16px; line-height: 1.5; color: var(--bone); }
 .v4-record-obs { margin: 4px 0 0; padding-left: 20px; display: grid; gap: 10px; }
 .v4-record-obs p { margin: 0 0 2px; font-size: 15px; line-height: 1.45; }
 .v4-record-unsure { margin: 4px 0 0; padding-left: 18px; font-size: 14px; color: var(--bone-dim); font-style: italic; }
 .v4-record-next { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+/* "Where else is this used?" */
+.v4-possess-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.v4-possess-where { margin-left: auto; min-height: 28px; padding: 0 8px; cursor: pointer; background: none; border: 0; box-shadow: inset 0 0 0 1px #4a3a32; font-family: var(--font-label), monospace; font-size: 12px; color: var(--gold); }
+.v4-possess-where:hover, .v4-possess-where:focus-visible { box-shadow: inset 0 0 0 1px var(--gold); color: var(--bone); outline: none; }
+.v4-possess-where code { font-family: ui-monospace, Menlo, monospace; }
+@media (max-width: 1023px) { .v4-possess-where { min-height: 44px; } }

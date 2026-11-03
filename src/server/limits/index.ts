@@ -22,6 +22,12 @@ export type Limits = {
   /** Reading the ghost's code (file list and files). Looser than summoning: a visitor opens many files. */
   codeApi: RateLimiter;
   codeApiGlobal: RateLimiter;
+  /** GitHub allows about ten code searches a minute per token: stay under it for the whole server. */
+  codeSearch: RateLimiter;
+  codeSearchGlobal: RateLimiter;
+  /** The Specialist's in-process gate: readings arrive as the player opens code, so looser than chat's. */
+  specialistApi: RateLimiter;
+  specialistApiGlobal: RateLimiter;
   creationBudget: CreationBudget;
 };
 
@@ -45,6 +51,10 @@ export function createLimits(env: Record<string, string | undefined> = process.e
     chatApiGlobal: createRateLimiter({ limit: intFromEnv(env, "GITGHOST_CHAT_API_GLOBAL_PER_MINUTE", 30, 1, 100_000), windowMs: 60_000, maxKeys: 1, now }),
     codeApi: createRateLimiter({ limit: intFromEnv(env, "CODE_API_LIMIT", 60, 1, 10_000), windowMs: 60_000, now }),
     codeApiGlobal: createRateLimiter({ limit: intFromEnv(env, "CODE_API_GLOBAL_LIMIT", 300, 1, 1_000_000), windowMs: 60_000, maxKeys: 1, now }),
+    codeSearch: createRateLimiter({ limit: intFromEnv(env, "CODE_SEARCH_LIMIT", 4, 1, 100), windowMs: 60_000, now }),
+    codeSearchGlobal: createRateLimiter({ limit: intFromEnv(env, "CODE_SEARCH_GLOBAL_LIMIT", 8, 1, 30), windowMs: 60_000, maxKeys: 1, now }),
+    specialistApi: createRateLimiter({ limit: intFromEnv(env, "SPECIALIST_API_PER_MINUTE", 12, 1, 1000), windowMs: 60_000, now }),
+    specialistApiGlobal: createRateLimiter({ limit: intFromEnv(env, "SPECIALIST_API_GLOBAL_PER_MINUTE", 60, 1, 100_000), windowMs: 60_000, maxKeys: 1, now }),
     creationBudget: createCreationBudget({
       enabled: !off,
       perHour: intFromEnv(env, "IDENTITY_CREATES_PER_HOUR", 200, 0, 100_000),
@@ -61,7 +71,7 @@ type G = typeof globalThis & { [KEY]?: Limits };
 export function getLimits(): Limits {
   const g = globalThis as G;
   // A long-running dev server may hold limits built before a limiter was added: rebuild rather than crash.
-  if (!g[KEY] || !("codeApi" in g[KEY])) g[KEY] = createLimits();
+  if (!g[KEY] || !("specialistApi" in g[KEY])) g[KEY] = createLimits();
   return g[KEY];
 }
 

@@ -1,0 +1,110 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadUsageCountersAndKillSwitch",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-2:__ACCOUNT_ID__:table/gitghost-usage-counters"
+    },
+    {
+      "Sid": "WriteCountersNeverTheKillSwitch",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-2:__ACCOUNT_ID__:table/gitghost-usage-counters",
+      "Condition": {
+        "ForAllValues:StringLike": {
+          "dynamodb:LeadingKeys": [
+            "RL#*",
+            "REQ#*",
+            "BUDGET#*",
+            "LEASE#*"
+          ]
+        },
+        "Null": {
+          "dynamodb:LeadingKeys": "false"
+        }
+      }
+    },
+    {
+      "Sid": "ReadOnlyTheAtomAtomGhostIdentity",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-2:__ACCOUNT_ID__:table/gitghost-entity-assignments",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "dynamodb:LeadingKeys": [
+            "3228505"
+          ]
+        },
+        "Null": {
+          "dynamodb:LeadingKeys": "false"
+        }
+      }
+    },
+    {
+      "Sid": "InvokeOnlyThroughThisInferenceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": "arn:aws:bedrock:us-east-2:__ACCOUNT_ID__:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0"
+    },
+    {
+      "Sid": "InvokeUnderlyingModelOnlyViaThatProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "bedrock:InferenceProfileArn": "arn:aws:bedrock:us-east-2:__ACCOUNT_ID__:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0"
+        }
+      }
+    },
+    {
+      "Sid": "InvokeNovaLiteInRegionOnly",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": "arn:aws:bedrock:us-east-2::foundation-model/amazon.nova-lite-v1:0"
+    },
+    {
+      "Sid": "SpecialistInvokeOnlyThroughSonnet55Profile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": "arn:aws:bedrock:us-east-2:__ACCOUNT_ID__:inference-profile/us.anthropic.claude-sonnet-5-5"
+    },
+    {
+      "Sid": "SpecialistInvokeSonnet55OnlyViaThatProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5-5",
+        "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-sonnet-5-5",
+        "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-sonnet-5-5"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "bedrock:InferenceProfileArn": "arn:aws:bedrock:us-east-2:__ACCOUNT_ID__:inference-profile/us.anthropic.claude-sonnet-5-5"
+        }
+      }
+    }
+  ]
+}

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CodeFile, CodeOutline, CodeSymbol, CodeTree } from "@/domain/code";
-import { symbolPath } from "@/domain/outline";
+import { enclosing, symbolPath } from "@/domain/outline";
 import { playSfx } from "@/lib/sound";
-import { askable, rankPaths, type CodeSource, type Lines } from "./code";
+import { askable, rankPaths, searchable, type CodeSearchResult, type CodeSource, type Lines } from "./code";
 
 const SHOWN = 150;
 
@@ -22,13 +22,24 @@ export function Possession({ source, at, path, lines, marks = [], onOpen, onSele
   /** Line ranges the Specialist commented on, marked in gold. */
   marks?: readonly { from: number; to: number }[];
   onOpen: (path: string | null) => void;
-  onSelect: (lines: Lines) => void;
+  /** `name`: the lines were chosen by a name on the file's map (a whole function or class). */
+  onSelect: (lines: Lines, name?: string) => void;
   onAsk: () => void;
   onLeave: () => void;
 }) {
   const [tree, setTree] = useState<{ key: string; value: CodeTree | null; error: string | null } | null>(null);
   const [file, setFile] = useState<{ key: string; value: CodeFile | null; error: string | null } | null>(null);
   const [query, setQuery] = useState("");
+  // "Where else is this used?": GitHub code search results, shown in place of the file list until cleared
+  const [found, setFound] = useState<{ term: string; result?: CodeSearchResult; error?: string } | null>(null);
+  const runSearch = source.search
+    ? (term: string) => {
+        playSfx("open");
+        setFound({ term });
+        onOpen(null);
+        void source.search!(term).then((r) => setFound((f) => (f?.term === term ? (r.ok ? { term, result: r.value } : { term, error: r.message }) : f)));
+      }
+    : undefined;
   const treeKey = at ?? "now";
   const fileKey = `${treeKey}:${path ?? ""}`;
 
@@ -80,7 +91,35 @@ export function Possession({ source, at, path, lines, marks = [], onOpen, onSele
         <button type="button" className="v4-possess-leave" onClick={onLeave} aria-label="Leave its code" data-testid="possess-leave">✕</button>
       </header>
       {path ? (
-        <FileView file={shownFile} lines={lines} marks={marks} onSelect={onSelect} onAsk={onAsk} />
+        <FileView file={shownFile} lines={lines} marks={marks} onSelect={onSelect} onAsk={onAsk} onSearch={runSearch} />
+      ) : found ? (
+        <div className="v4-possess-body" data-testid="possess-found">
+          <button type="button" className="v4-possess-back" onClick={() => setFound(null)}>◀ All its files</button>
+          <p className="v4-possess-count">
+            Where <code className="v4-sha">{found.term}</code> appears
+            {found.result ? ` · ${found.result.total.toLocaleString("en-US")} ${found.result.total === 1 ? "file" : "files"} on ${found.result.branch} (GitHub code search)` : ""}
+          </p>
+          {!found.result && !found.error ? <p className="v4-quiet">Listening for its name…</p> : null}
+          {found.error ? <p className="v4-quiet" role="alert">{found.error}</p> : null}
+          {/* an empty search proves nothing: GitHub's code search does not cover every repository */}
+          {found.result && !found.result.paths.length ? (
+            <p className="v4-quiet" data-testid="found-none">
+              GitHub&apos;s code search returned nothing for it.{found.result.archived ? " It often does not search archived repositories like this one," : " Its search does not cover every repository,"} so this does not mean the name is unused.
+            </p>
+          ) : null}
+          {found.result ? (
+            <ul className="v4-possess-files">
+              {found.result.paths.map((p) => (
+                <li key={p}>
+                  <button type="button" onClick={() => { playSfx("open"); onOpen(p); }} onMouseEnter={() => playSfx("hover")} data-testid="found-file">
+                    <span className="v4-possess-dir">{p.includes("/") ? p.slice(0, p.lastIndexOf("/") + 1) : ""}</span>
+                    <span className="v4-possess-name">{p.slice(p.lastIndexOf("/") + 1)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : (
         <div className="v4-possess-body">
           <label className="v4-possess-search">
@@ -141,7 +180,7 @@ function CodeMap({ outline, lines, onPick }: { outline: CodeOutline; lines: Line
 }
 
 /** One file: its map, numbered lines, a roving keyboard cursor, a selected range. */
-function FileView({ file, lines, marks, onSelect, onAsk }: { file: { value: CodeFile | null; error: string | null } | null; lines: Lines; marks: readonly { from: number; to: number }[]; onSelect: (l: Lines) => void; onAsk: () => void }) {
+function FileView({ file, lines, marks, onSelect, onAsk, onSearch }: { file: { value: CodeFile | null; error: string | null } | null; lines: Lines; marks: readonly { from: number; to: number }[]; onSelect: (l: Lines, name?: string) => void; onAsk: () => void; onSearch?: (term: string) => void }) {
   const anchor = useRef<number | null>(null);
   const [cursor, setCursor] = useState(1);
   const [mapOpen, setMapOpen] = useState<boolean | null>(null); // null: the layout decides (open on wide screens)
@@ -176,12 +215,13 @@ function FileView({ file, lines, marks, onSelect, onAsk }: { file: { value: Code
     playSfx("select");
     anchor.current = s.from;
     setCursor(Math.min(s.from, f.lines.length));
-    onSelect({ from: s.from, to: s.to });
+    onSelect({ from: s.from, to: s.to }, s.name);
     const el = box.current?.querySelector<HTMLElement>(`[data-line="${Math.min(s.from, f.lines.length)}"]`);
     el?.scrollIntoView({ block: "start" });
     if (window.matchMedia("(max-width: 1023px)").matches) setMapOpen(false);
   };
   const where = lines ? symbolPath(f.outline.symbols, lines.from, lines.to) : null;
+  const name = lines ? enclosing(f.outline.symbols, lines.from, lines.to).at(-1)?.name : undefined;
   return (
     <div className="v4-possess-file" data-map={mapOpen === null ? undefined : String(mapOpen)}>
       <button type="button" className="v4-map-toggle" aria-expanded={mapOpen ?? undefined} onClick={() => setMapOpen((o) => !(o ?? false))} data-testid="map-toggle">Map</button>
@@ -205,6 +245,9 @@ function FileView({ file, lines, marks, onSelect, onAsk }: { file: { value: Code
         {lines ? `Lines ${lines.from}${lines.to > lines.from ? `–${lines.to}` : ""} chosen${where ? ` · in ${where}` : ""}` : "Choose a name on the map, or click a line; Shift+click for more"}
         {f.truncated ? ` · showing ${f.lines.length.toLocaleString("en-US")} of ${f.total.toLocaleString("en-US")} lines` : ""}
         {askable(f.path) ? "" : " · it can show you this file, but not speak about it"}
+        {onSearch && name && searchable(name) ? (
+          <button type="button" className="v4-possess-where" onClick={() => onSearch(name)} data-testid="where-else">Where else is <code>{name}</code> used?</button>
+        ) : null}
       </p>
     </div>
   );

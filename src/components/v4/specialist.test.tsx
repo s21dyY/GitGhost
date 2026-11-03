@@ -8,7 +8,7 @@ const SHA = "e".repeat(40);
 const record: CodeRecord = {
   findings: {
     summary: "Rebuilds an editor from saved state, or returns null when it cannot.",
-    observations: [{ text: "Returns null when the saved version is not `SERIALIZATION_VERSION`.", from: 104, to: 104, url: `https://github.com/atom/atom/blob/${SHA}/src/text-editor.js#L104-L104` }],
+    observations: [{ path: "src/text-editor.js", text: "Returns null when the saved version is not `SERIALIZATION_VERSION`.", from: 104, to: 104, url: `https://github.com/atom/atom/blob/${SHA}/src/text-editor.js#L104-L104` }],
     uncertainties: ["What bufferForIdSync does is not shown."],
     followUps: ["Where is deserialize called?"],
   },
@@ -53,6 +53,7 @@ describe("asking the Specialist from the page", () => {
     expect(modelLabel("us.anthropic.claude-sonnet-5-5")).toBe("Claude Sonnet 5.5");
     expect(modelLabel("us.anthropic.claude-sonnet-5")).toBe("Claude Sonnet 5");
     expect(modelLabel("anthropic.claude-haiku-4-5-20251001-v1:0")).toBe("Claude Haiku 4.5");
+    expect(modelLabel("amazon.nova-lite-v1:0")).toBe("Amazon Nova Lite");
   });
   it("the offline demo never offers it (its repository has no real commit to read)", () => {
     expect(mockGameData().specialist).toBe(false);

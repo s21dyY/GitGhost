@@ -36,4 +36,14 @@ describe("GET /api/code", () => {
     for (let i = 0; i < 3; i++) codes.push((await get("owner=a&repo=b&at=main")).status);
     expect(codes).toEqual([400, 400, 429]);
   });
+  it("refuses a search that is not a name, and says plainly when searching needs a token", async () => {
+    const spy = vi.fn();
+    vi.stubGlobal("fetch", spy);
+    expect((await get("owner=a&repo=b&search=x%20repo:evil/evil", { "sec-fetch-site": "same-origin" })).status).toBe(400);
+    vi.stubEnv("GITHUB_TOKEN", "");
+    const res = await get("owner=a&repo=b&search=deserialize", { "sec-fetch-site": "same-origin" });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ code: "search_unavailable" });
+    expect(spy).not.toHaveBeenCalled();
+  });
 });

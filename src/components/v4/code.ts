@@ -11,7 +11,7 @@ import { MOCK_CODE } from "./fixtures";
  */
 export type CodeResult<T> = { ok: true; value: T } | { ok: false; message: string };
 
-async function get<T>(params: Record<string, string>, key: "tree" | "file"): Promise<CodeResult<T>> {
+async function get<T>(params: Record<string, string>, key: "tree" | "file" | "search"): Promise<CodeResult<T>> {
   try {
     const res = await fetch(`/api/code?${new URLSearchParams(params)}`, { cache: "no-store" });
     const body = (await res.json()) as { ok: boolean; message?: string } & Record<string, unknown>;
@@ -21,10 +21,15 @@ async function get<T>(params: Record<string, string>, key: "tree" | "file"): Pro
   }
 }
 
+/** GitHub code search inside the repository (default branch only). Live repositories only. */
+export type CodeSearchResult = { term: string; total: number; paths: string[]; branch: string; archived: boolean };
 export type CodeSource = {
   tree: (at: string | null) => Promise<CodeResult<CodeTree>>;
   file: (path: string, at: string | null) => Promise<CodeResult<CodeFile>>;
+  search?: (term: string) => Promise<CodeResult<CodeSearchResult>>;
 };
+/** A name the server will search for (an identifier, never free text): see src/server/github/search.ts. */
+export const searchable = (term: string) => /^[A-Za-z_$][\w$.]{1,79}$/.test(term);
 
 /** The live repository through /api/code, or the demo's invented files. `at` is a commit SHA (Time Travel) or null. */
 export function codeSource(g: Pick<GameData, "mode" | "repo">): CodeSource {
@@ -44,6 +49,7 @@ export function codeSource(g: Pick<GameData, "mode" | "repo">): CodeSource {
   return {
     tree: (at) => get<CodeTree>({ ...base, ...(at ? { at } : {}) }, "tree"),
     file: (path, at) => get<CodeFile>({ ...base, path, ...(at ? { at } : {}) }, "file"),
+    search: (term) => get<CodeSearchResult>({ ...base, search: term }, "search"),
   };
 }
 

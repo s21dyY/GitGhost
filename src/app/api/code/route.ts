@@ -1,6 +1,7 @@
 import { parseRepoInput } from "@/domain/repo-ref";
 import { GitHubError } from "@/server/github/client";
 import { fetchCodeFile, fetchCodeTree, isSafePath, isSha, repoFor } from "@/server/github/code";
+import { isSearchTerm, searchCode } from "@/server/github/search";
 import { clientKeyFromHeaders, getLimits } from "@/server/limits";
 
 const STATUS_BY_CODE: Record<string, number> = { not_found: 404, rate_limited: 429, forbidden: 403, timeout: 504 };
@@ -12,6 +13,7 @@ function json(body: unknown, status: number, extra: Record<string, string> = {})
 /**
  * GET /api/code?owner=o&repo=r[&at=<40-hex sha>]            the repository's readable files (the ghost's body)
  * GET /api/code?owner=o&repo=r&path=src/a.js[&at=<sha>]      one file's code, for the viewer
+ * GET /api/code?owner=o&repo=r&search=bufferForIdSync         where else a name appears (GitHub code search, default branch)
  * Read-only, public repositories only, same-origin only (another site must not spend our GitHub quota).
  * Without `at`, the default branch; with it, the code as it stood at that commit (Time Travel).
  */
@@ -32,9 +34,18 @@ export async function GET(request: Request) {
   if (at !== null && !isSha(at)) return json({ ok: false, code: "bad_request", message: "`at` must be a full commit SHA." }, 400);
   const path = q.get("path");
   if (path !== null && !isSafePath(path)) return json({ ok: false, code: "bad_request", message: "That is not a file path in this repository." }, 400);
+  const search = q.get("search");
+  if (search !== null) {
+    if (!isSearchTerm(search)) return json({ ok: false, code: "bad_request", message: "Only a name from the code can be searched." }, 400);
+    if (!process.env.GITHUB_TOKEN) return json({ ok: false, code: "search_unavailable", message: "Searching the code needs a GitHub token on the server." }, 503);
+    const s = limits.codeSearch.take(clientKeyFromHeaders(request.headers));
+    const sg = s.allowed ? limits.codeSearchGlobal.take("all") : s;
+    if (!sg.allowed) return json({ ok: false, code: "rate_limited", message: `Searching is busy. Try again in ${sg.retryAfterSec} seconds.` }, 429, { "Retry-After": String(sg.retryAfterSec) });
+  }
 
   try {
     const repo = await repoFor({ owner: parsed.owner, repo: parsed.repo });
+    if (search !== null) return json({ ok: true, search: await searchCode(repo, search) }, 200);
     if (path === null) return json({ ok: true, tree: await fetchCodeTree(repo, at) }, 200);
     const file = await fetchCodeFile(repo, path, at);
     if (!file) return json({ ok: false, code: "not_readable", message: "That file is binary or too large to show." }, 422);

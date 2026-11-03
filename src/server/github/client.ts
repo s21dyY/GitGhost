@@ -95,8 +95,8 @@ export async function githubBlame(v: { owner: string; name: string; at: string; 
   return ranges.map((r) => ({ start: r.startingLine, end: r.endingLine, sha: r.commit.oid, headline: r.commit.messageHeadline, date: r.commit.committedDate }));
 }
 
-/** Only repository paths and the issue-search path are reachable; callers never pass user URLs. */
-const allowedPath = (path: string) => path.startsWith("/repos/") || path.startsWith("/search/issues?");
+/** Only repository paths and the issue- and code-search paths are reachable; callers never pass user URLs. */
+const allowedPath = (path: string) => path.startsWith("/repos/") || path.startsWith("/search/issues?") || path.startsWith("/search/code?");
 
 /** Same as githubGet, but also returns the response headers (for example Link, used to count history pages). */
 export async function githubGetWithHeaders<T>(

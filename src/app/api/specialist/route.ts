@@ -8,7 +8,7 @@ const json = (body: unknown, status: number, extra: Record<string, string> = {})
 const Body = z.object({
   owner: z.string().min(1).max(100),
   repo: z.string().min(1).max(100),
-  path: z.string().min(1).max(300),
+  path: z.string().min(1).max(300).optional(),
   at: z.string().regex(/^[0-9a-f]{40}$/),
   from: z.number().int().min(1).max(200_000).optional(),
   to: z.number().int().min(1).max(200_000).optional(),
@@ -17,8 +17,8 @@ const Body = z.object({
 }).strict();
 
 /**
- * POST /api/specialist: a deep reading of one file (or a few lines of it) at an exact commit, by the Specialist model,
- * introduced by the ghost. Asked for explicitly by the player; never part of ordinary conversation. Same-origin only.
+ * POST /api/specialist: the Specialist's reading at an exact commit: of the codebase as a whole (no path), of one file,
+ * or of a few lines of it, introduced by the ghost. Asked for as the player opens code. Same-origin only.
  * The in-process limiter runs before anything is read; runChat then applies the Specialist's own guards (its kill
  * switch and the shared one, its request cap, its budget, the shared concurrency lease).
  */
@@ -40,8 +40,8 @@ export async function POST(request: Request) {
   }
 
   const limits = getLimits();
-  const perClient = limits.chatApi.take(clientKeyFromHeaders(request.headers));
-  const gate = perClient.allowed ? limits.chatApiGlobal.take("all") : perClient;
+  const perClient = limits.specialistApi.take(clientKeyFromHeaders(request.headers));
+  const gate = perClient.allowed ? limits.specialistApiGlobal.take("all") : perClient;
   if (!gate.allowed) {
     return json({ ok: false, code: "rate_limited", message: `Too many requests. Try again in ${gate.retryAfterSec} seconds.`, retryAfterSec: gate.retryAfterSec }, 429, { "Retry-After": String(gate.retryAfterSec) });
   }

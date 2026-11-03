@@ -117,7 +117,7 @@ export function encounterBeats(g: Game, form: Form, via: Via, ghostLine: string)
 }
 
 /** Menu lines: the opening's, and while its code is open, the questions about the code in front of the visitor. */
-export type Choice = { id: "who" | "what" | "body" | "other" | "code-what" | "code-why" | "code-when" | "code-specialist" | "code-record" | "leave"; label: string };
+export type Choice = { id: "who" | "what" | "body" | "other" | "code-what" | "code-why" | "code-when" | "code-record" | "leave"; label: string };
 export const CHOICES: Choice[] = [
   // Each question carries a word ("project", "development", "commits") that makes the server answer with cited facts, not fiction.
   { id: "who", label: "Who were you? What was this project made for?" },

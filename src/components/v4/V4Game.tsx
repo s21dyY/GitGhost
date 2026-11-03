@@ -276,48 +276,74 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
   const shownBody = useRef(false);
   const code = useMemo(() => codeSource({ mode: g.mode, repo: g.repo }), [g.mode, g.repo]);
   const codeAt = past ? (era?.fullSha ?? null) : null;
-  const openBody = () => {
-    closeDrawers();
-    setBody({ path: null, lines: null });
-    if (!shownBody.current) {
-      shownBody.current = true;
-      sayLocally("Show me your code.", bodyReply(form));
-    }
-  };
-  // The Specialist: a deep reading of the chosen code by a stronger model, asked for explicitly, at the era's exact commit.
+  // The Specialist reads along as the visitor explores, at the era's exact commit: the codebase at a glance when its
+  // code opens, a file when it opens, a part when a name on the file's map is chosen. Each reading is asked for once.
   const [record, setRecord] = useState<CodeRecord | null>(null);
   const [recordOpen, setRecordOpen] = useState(false);
-  const canAskSpecialist = g.specialist && !!body?.path && askable(body.path) && !!era?.fullSha;
-  const askTheSpecialist = async (question?: string) => {
-    if (!body?.path || !era?.fullSha || busy) return;
-    const path = body.path, lines = body.lines;
+  const readings = useRef(new Map<string, CodeRecord>());
+  const pickTimer = useRef<number | undefined>(undefined);
+  const canRead = g.specialist && !!era?.fullSha;
+  /** `auto`: the visitor only looked (opened, picked); a reading they have already had is not repeated. */
+  const explain = async (t: { path?: string; from?: number; to?: number; question?: string; asked: string; lead?: ReplySegment[]; auto: boolean }) => {
+    if (!canRead || !era?.fullSha) return;
+    const key = [era.fullSha, t.path ?? "", t.from ?? "", t.to ?? "", t.question ?? ""].join("|");
+    const known = readings.current.get(key);
+    if (known && t.auto) return setRecord(known);
+    const mine = ++token.current;
     playSfx("open");
     setRecordOpen(false);
     setBusy(true);
     setError(null);
     dispatch({ type: "LISTEN" });
-    const asked = question ?? `Specialist, read ${path}${lines ? `:${lines.from}${lines.to > lines.from ? `-${lines.to}` : ""}` : ""} for me.`;
-    const r = await askSpecialist({ owner: g.repo.owner, repo: g.repo.name, path, at: era.fullSha, ...(lines ? { from: lines.from, to: lines.to } : {}), ...(question ? { question } : {}), stage });
+    const r = known
+      ? { ok: true as const, record: known }
+      : await askSpecialist({ owner: g.repo.owner, repo: g.repo.name, at: era.fullSha, ...(t.path ? { path: t.path } : {}), ...(t.from ? { from: t.from, to: t.to } : {}), ...(t.question ? { question: t.question } : {}), stage });
+    if (r.ok) readings.current.set(key, r.record);
+    if (token.current !== mine) return; // the visitor has moved on: kept for when they come back
     setBusy(false);
     const id = nextId.current++;
-    // Facts reach the dialogue only as the validated summary (a reading); the ghost's own lines carry no facts.
+    // The ghost tells the checked findings in its own voice; without that telling, its scripted line and the summary.
     const segments: ReplySegment[] = r.ok
-      ? [...r.record.framing.map((t): ReplySegment => ({ kind: "ghost", text: t, cites: [] })), { kind: "reading", text: r.record.findings.summary, cites: [] }]
-      : [{ kind: "unknown", text: r.message, cites: [] }];
+      ? r.record.narration?.length
+        ? r.record.narration.map((x): ReplySegment => ({ kind: x.kind, text: x.text, cites: [] }))
+        : [...(t.lead ?? r.record.framing.map((x): ReplySegment => ({ kind: "ghost", text: x, cites: [] }))), { kind: "reading", text: r.record.findings.summary, cites: [] }]
+      : [...(t.lead ?? []), { kind: "unknown", text: r.message, cites: [] }];
     if (r.ok) setRecord(r.record);
-    setItems((list) => [...list, { type: "turn", turn: { id, q: asked, eraIdx, reply: { segments, sources: [] } } }]);
-    setStatus(r.ok ? `The Specialist has read ${path}. ${r.record.findings.summary} Open the Code Record for its observations and source links.` : r.message);
+    setItems((list) => [...list, { type: "turn", turn: { id, q: t.asked, eraIdx, reply: { segments, sources: [] } } }]);
+    setStatus(r.ok ? `${r.record.findings.summary} Open the Code Record for its observations and source links.` : r.message);
     if (reduced) dispatch({ type: "DONE" });
     else {
       setRevealId(id);
       dispatch({ type: "SPEAK" });
     }
   };
+  const openBody = () => {
+    closeDrawers();
+    setBody({ path: null, lines: null });
+    if (canRead) return void explain({ asked: "Show me your code.", lead: bodyReply(form), auto: true });
+    if (!shownBody.current) {
+      shownBody.current = true;
+      sayLocally("Show me your code.", bodyReply(form));
+    }
+  };
+  const openFile = (path: string | null) => {
+    window.clearTimeout(pickTimer.current);
+    setBody({ path, lines: null });
+    if (path && askable(path)) void explain({ path, asked: `Show me ${path.slice(path.lastIndexOf("/") + 1)}.`, auto: true });
+  };
+  /** A name chosen on the file's map is explained once the visitor settles on one; clicked lines wait to be asked about. */
+  const selectLines = (lines: Lines, name?: string) => {
+    setBody((b) => (b ? { ...b, lines } : b));
+    window.clearTimeout(pickTimer.current);
+    const path = body?.path;
+    if (!name || !lines || !path || !askable(path)) return;
+    pickTimer.current = window.setTimeout(() => void explain({ path, from: lines.from, to: lines.to, asked: `What does ${name} do?`, auto: true }), 600);
+  };
+  const readHere = (r: CodeRecord | null) => !!r && !!body && r.path === body.path;
   const codeChoices: Choice[] | null = body
     ? [
         ...(body.path && askable(body.path) ? codeQuestions(body.path, body.lines).map((q): Choice => ({ id: `code-${q.id}`, label: q.label })) : []),
-        ...(canAskSpecialist ? [{ id: "code-specialist", label: "Ask the Specialist" } as Choice] : []),
-        ...(record && record.path === body.path ? [{ id: "code-record", label: "Read the Code Record" } as Choice] : []),
+        ...(readHere(record) ? [{ id: "code-record", label: "Read the Code Record" } as Choice] : []),
         { id: "leave", label: "Leave its code" },
       ]
     : null;
@@ -330,10 +356,14 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
     }
     if (c.id === "body") return openBody();
     if (c.id === "leave") return setBody(null);
-    if (c.id === "code-specialist") return void askTheSpecialist();
     if (c.id === "code-record") {
       playSfx("open");
       return setRecordOpen(true);
+    }
+    // "What does this part do?" is the Specialist's when it is reading; why and when are history, so the ghost's.
+    if (c.id === "code-what" && canRead && body?.path) {
+      const l = body.lines;
+      return void explain({ path: body.path, ...(l ? { from: l.from, to: l.to } : {}), asked: c.label, auto: false });
     }
     if (c.id === "code-what" || c.id === "code-why" || c.id === "code-when") {
       const q = body?.path ? codeQuestions(body.path, body.lines).find((x) => `code-${x.id}` === c.id) : null;
@@ -459,10 +489,10 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
           {body ? (
             <Possession
               source={code} at={codeAt} path={body.path} lines={body.lines}
-              marks={record && record.path === body.path ? record.findings.observations : []}
-              onOpen={(path) => setBody({ path, lines: null })}
-              onSelect={(lines) => setBody((b) => (b ? { ...b, lines } : b))}
-              onAsk={() => { const q = body.path && askable(body.path) ? codeQuestions(body.path, body.lines)[0] : null; if (q && !busy) void submit(q.question); }}
+              marks={readHere(record) ? record!.findings.observations.flatMap((o) => (o.from ? [{ from: o.from, to: o.to ?? o.from }] : [])) : []}
+              onOpen={openFile}
+              onSelect={selectLines}
+              onAsk={() => { const q = body.path && askable(body.path) ? codeQuestions(body.path, body.lines)[0] : null; if (q && !busy) choose({ id: `code-${q.id}` as Choice["id"], label: q.label }); }}
               onLeave={() => setBody(null)}
             />
           ) : null}
@@ -492,7 +522,7 @@ function Inner({ ask, addEvidence, tools }: { ask: Ask; addEvidence: (e: Evidenc
       {archiveOpen || journalOpen ? <button type="button" className="v4-backdrop" aria-label="Close panel" tabIndex={-1} onClick={closeDrawers} /> : null}
 
       <Drawer title="Code Record" open={recordOpen && !!record} onOpenChange={setRecordOpen} testId="code-record-drawer">
-        {record ? <CodeRecordBody record={record} busy={busy} onFollowUp={(q) => void askTheSpecialist(q)} /> : null}
+        {record ? <CodeRecordBody record={record} busy={busy} onFollowUp={(q) => void explain({ ...(record.path ? { path: record.path } : {}), ...(record.from ? { from: record.from, to: record.to } : {}), question: q, asked: q, auto: false })} /> : null}
       </Drawer>
       <Drawer title="Records" open={recordIds !== null} onOpenChange={(o) => !o && setRecordIds(null)} testId="evidence-drawer">
         {recordIds ? <RecordsBody ids={recordIds} /> : null}
