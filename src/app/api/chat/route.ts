@@ -2,6 +2,12 @@ import { answerQuestion } from "@/server/chat/pipeline";
 import { parseChatBody } from "@/server/chat/request";
 import { clientKeyFromHeaders, getLimits } from "@/server/limits";
 
+/**
+ * Vercel function limit for this route (seconds). A slow reply can take the GitHub reads, one model call
+ * (GITGHOST_CHAT_TIMEOUT_MS, 20 s by default) and one format retry; 60 s covers that. Hobby allows up to 300 s.
+ */
+export const maxDuration = 60;
+
 const json = (body: unknown, status: number, extra: Record<string, string> = {}) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store", ...extra } });
 

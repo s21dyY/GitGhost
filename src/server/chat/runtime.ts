@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
+import { withAwsCredentials } from "@/server/aws-credentials";
 import type { ChatConfig } from "./config";
 import { createBedrockProvider } from "./providers/bedrock";
 import type { ChatDeps } from "./service";
@@ -31,7 +32,8 @@ export function resetChatRuntimeForTests(): void {
 }
 
 /**
- * Client options for billable AWS calls: the region, plus the restricted named profile when one is configured. */
+ * Client options for billable AWS calls: the region, plus the restricted named profile when one is configured.
+ * On Vercel (AWS_ROLE_ARN set) the clients get OIDC role credentials instead; see server/aws-credentials.ts. */
 export function awsClientOptions(config: Pick<ChatConfig, "region" | "billableProfile">): { region: string; profile?: string } {
   return { region: config.region ?? "", ...(config.billableProfile ? { profile: config.billableProfile } : {}) };
 }
@@ -42,7 +44,7 @@ export function billableRuntime(config: ChatConfig, clients: RuntimeClients = {}
     const key = `${config.region}/${config.usageTable}/${config.billableProfile ?? ""}`;
     store = clients.dynamo ? createDynamoUsageStore(clients.dynamo, config.usageTable) : dynamoStores.get(key);
     if (!store) {
-      store = createDynamoUsageStore(new DynamoDBClient(awsClientOptions(config)), config.usageTable);
+      store = createDynamoUsageStore(new DynamoDBClient(withAwsCredentials(awsClientOptions(config))), config.usageTable);
       dynamoStores.set(key, store);
     }
   } else if (config.usageStore === "memory") {
@@ -53,7 +55,7 @@ export function billableRuntime(config: ChatConfig, clients: RuntimeClients = {}
     store,
     createProvider: (c) => {
       if (!c.modelId || !c.region) throw new Error("Bedrock model or region is not configured.");
-      bedrockClient ??= clients.bedrock ? undefined : new BedrockRuntimeClient({ ...awsClientOptions(c), maxAttempts: 1 });
+      bedrockClient ??= clients.bedrock ? undefined : new BedrockRuntimeClient({ ...withAwsCredentials(awsClientOptions(c)), maxAttempts: 1 });
       const client = clients.bedrock ?? bedrockClient!;
       return createBedrockProvider({ client, modelId: c.modelId });
     },

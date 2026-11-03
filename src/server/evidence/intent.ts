@@ -2,9 +2,12 @@
  * Deterministic question-intent classification. Used only to decide WHICH bounded GitHub evidence
  * to fetch; it never decides what is true. Unknown questions fall back to "general".
  */
-export type Intent = "status" | "recent" | "history" | "issues" | "general" | "file" | "compare";
+export type Intent = "status" | "recent" | "history" | "issues" | "general" | "file";
 
 /**
+ * Not wired into chat yet: there is no "compare" evidence retrieval, so questions naming two moments are still
+ * classified by the rules below.
+ *
  * Two moments of the repository to compare. A moment is resolved to a real commit on the server:
  *   before   the last commit before an instant ("2016" starts at 2016-01-01)
  *   now      the newest commit
@@ -85,8 +88,6 @@ const FOLLOW_UP = /^(and|so|then|what about|tell me more|more|go on|continue|any
 export function classifyIntent(question: string): Intent {
   // naming a file wins: "why did lib/retry.js stop retrying" is about that file, not about the project dying
   if (detectFileRef(question)) return "file";
-  // two moments named: a comparison ("what changed between 2016 and 2019?", "since then")
-  if (detectCompare(question)) return "compare";
   for (const [intent, re] of RULES) if (re.test(question)) return intent;
   return "general";
 }

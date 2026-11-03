@@ -1,3 +1,4 @@
+import { withAwsCredentials } from "@/server/aws-credentials";
 import {
   DynamoDBClient,
   GetItemCommand,
@@ -27,7 +28,8 @@ export function assignmentsTableName(env: Record<string, string | undefined> = p
 }
 
 /**
- * Uses the AWS default credential chain; credentials never appear in code.
+ * Uses the AWS default credential chain, or Vercel OIDC role credentials when AWS_ROLE_ARN is set; credentials never
+ * appear in code.
  * Fails fast on an AWS_PROFILE that is an account number (a known misconfiguration).
  */
 export function createDynamoClient(
@@ -39,7 +41,7 @@ export function createDynamoClient(
     throw new Error("AWS_PROFILE looks like an account number, not a profile name. Unset it or use a configured profile name.");
   }
   // Few retries so an unreachable table fails fast instead of stalling a page render.
-  return new DynamoDBClient({ region, maxAttempts: 2 });
+  return new DynamoDBClient(withAwsCredentials({ region, maxAttempts: 2 }, env));
 }
 
 function readAssignment(item: Record<string, AttributeValue> | undefined, repoId: number): EntityAssignment {
