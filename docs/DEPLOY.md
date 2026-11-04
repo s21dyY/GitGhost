@@ -34,10 +34,18 @@ Check locally first: `npm run build` must pass, because Vercel runs the same bui
 3. Deploy, then run `node scripts/deploy-smoke.mts https://<project>.vercel.app`. Without AWS the ghost's identity is "provisional" (not saved); everything else works.
 
 ## Step 2. Connect AWS (needs approval; creates IAM resources)
+Vercel sets `AWS_REGION` itself (to the region the function runs in) and reserves the standard `AWS_*` key names, so GitGhost reads its own: `GITGHOST_AWS_REGION`, and for keys `GITGHOST_AWS_ACCESS_KEY_ID` / `GITGHOST_AWS_SECRET_ACCESS_KEY`.
+
+**Option A: scoped IAM user (used for the Kiroween deploy).** The account's organization denies OIDC identity providers, so OIDC (option B) cannot be set up there.
+1. IAM user `gitghost-vercel`, no console access, inline policy = `infra/vercel/permissions-policy.json` (one model, two tables), one access key.
+2. Add variables (keys as Sensitive): `GITGHOST_AWS_ACCESS_KEY_ID`, `GITGHOST_AWS_SECRET_ACCESS_KEY`, `GITGHOST_AWS_REGION=us-east-2`, `GITGHOST_ASSIGNMENTS_TABLE=gitghost-entity-assignments`, `GITGHOST_USAGE_STORE=dynamodb`, `GITGHOST_USAGE_TABLE=gitghost-usage-counters`. Redeploy, run the smoke test; the ghost's identity is now saved.
+3. After the event: `aws iam delete-access-key` for that key, or delete the user.
+
+**Option B: Vercel OIDC (no keys), where the account allows it.**
 1. Vercel → Settings → Security → OIDC Federation: Team issuer. Note the team slug and project name.
 2. IAM → Identity providers → add OpenID Connect: URL `https://oidc.vercel.com/<TEAM_SLUG>`, audience `https://vercel.com/<TEAM_SLUG>`.
 3. Create role `gitghost-vercel`: trust policy = `infra/vercel/trust-policy.json.tmpl` with `TEAM_SLUG` and `PROJECT_NAME` filled in (production only); permissions = `infra/vercel/permissions-policy.json`.
-4. Add variables: `AWS_ROLE_ARN` (the role), `AWS_REGION=us-east-2`, `GITGHOST_ASSIGNMENTS_TABLE=gitghost-entity-assignments`, `GITGHOST_USAGE_STORE=dynamodb`, `GITGHOST_USAGE_TABLE=gitghost-usage-counters`. Redeploy, run the smoke test; the ghost's identity is now saved.
+4. Add `AWS_ROLE_ARN` (the role) and the same region and table variables as option A.
 
 ## Step 3. Live AI (separate approval; billable)
 1. Add `BEDROCK_MODEL_ID=amazon.nova-lite-v1:0`, `GITGHOST_BEDROCK_INPUT_USD_PER_MTOK=0.06`, `GITGHOST_BEDROCK_OUTPUT_USD_PER_MTOK=0.24` (re-check the AWS price page).

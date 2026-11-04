@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { oidcCredentials, withAwsCredentials } from "./aws-credentials";
+import { awsRegion, keyCredentials, oidcCredentials, withAwsCredentials } from "./aws-credentials";
 
 const ARN = "arn:aws:iam::123456789012:role/gitghost-vercel";
 
@@ -22,5 +22,25 @@ describe("AWS credentials: Vercel OIDC only when AWS_ROLE_ARN is set", () => {
   it("refuses a malformed role ARN instead of guessing", () => {
     expect(() => oidcCredentials({ AWS_ROLE_ARN: "arn:aws:iam::12:role/x" })).toThrow(/not a valid IAM role ARN/);
     expect(() => oidcCredentials({ AWS_ROLE_ARN: "arn:aws:iam::123456789012:user/someone" })).toThrow(/not a valid IAM role ARN/);
+  });
+});
+
+describe("AWS credentials: a scoped IAM user's keys where OIDC is not allowed", () => {
+  const KEYS = { GITGHOST_AWS_ACCESS_KEY_ID: "AKIAEXAMPLE", GITGHOST_AWS_SECRET_ACCESS_KEY: "secret" };
+  it("uses both keys, never a profile", () => {
+    const out = withAwsCredentials({ region: "us-east-2", profile: "gitghost-smoke" }, KEYS);
+    expect(out.credentials).toEqual({ accessKeyId: "AKIAEXAMPLE", secretAccessKey: "secret" });
+    expect("profile" in out).toBe(false);
+  });
+  it("refuses half a key pair", () => {
+    expect(() => keyCredentials({ GITGHOST_AWS_ACCESS_KEY_ID: "AKIAEXAMPLE" })).toThrow(/both/);
+  });
+  it("OIDC wins when both are configured", () => {
+    expect(typeof withAwsCredentials({ region: "us-east-2" }, { ...KEYS, AWS_ROLE_ARN: ARN }).credentials).toBe("function");
+  });
+  it("GITGHOST_AWS_REGION wins over the AWS_REGION the host sets", () => {
+    expect(awsRegion({ AWS_REGION: "us-east-1", GITGHOST_AWS_REGION: "us-east-2" })).toBe("us-east-2");
+    expect(awsRegion({ AWS_REGION: "us-east-2" })).toBe("us-east-2");
+    expect(awsRegion({})).toBeUndefined();
   });
 });

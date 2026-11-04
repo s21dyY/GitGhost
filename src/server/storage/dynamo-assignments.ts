@@ -1,4 +1,4 @@
-import { withAwsCredentials } from "@/server/aws-credentials";
+import { awsRegion, withAwsCredentials } from "@/server/aws-credentials";
 import {
   DynamoDBClient,
   GetItemCommand,
@@ -28,14 +28,15 @@ export function assignmentsTableName(env: Record<string, string | undefined> = p
 }
 
 /**
- * Uses the AWS default credential chain, or Vercel OIDC role credentials when AWS_ROLE_ARN is set; credentials never
- * appear in code.
+ * Uses the AWS default credential chain, Vercel OIDC role credentials when AWS_ROLE_ARN is set, or the scoped IAM
+ * user's GITGHOST_AWS_* keys; credentials never appear in code.
  * Fails fast on an AWS_PROFILE that is an account number (a known misconfiguration).
  */
 export function createDynamoClient(
-  region = process.env.AWS_REGION,
+  region?: string,
   env: Record<string, string | undefined> = process.env,
 ): DynamoDBClient {
+  region ??= awsRegion(env);
   if (!region) throw new Error("AWS_REGION must be set explicitly; no default region is assumed.");
   if (/^\d{12}$/.test(env.AWS_PROFILE?.trim() ?? "")) {
     throw new Error("AWS_PROFILE looks like an account number, not a profile name. Unset it or use a configured profile name.");

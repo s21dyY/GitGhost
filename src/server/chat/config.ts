@@ -1,3 +1,5 @@
+import { awsRegion } from "@/server/aws-credentials";
+
 /**
  * Chat and Bedrock cost-control configuration. Fail closed: a malformed value is an error, never
  * silently replaced with a default, and any error makes chat unavailable.
@@ -109,7 +111,7 @@ export function loadChatConfig(env: Env = process.env): ConfigResult {
     budgetSafetyFactor: factor,
     timeoutMs: int(env, "GITGHOST_CHAT_TIMEOUT_MS", 20_000, 1000, 120_000, errors),
     modelId: env.BEDROCK_MODEL_ID?.trim() || null,
-    region: env.AWS_REGION?.trim() || null,
+    region: awsRegion(env) ?? null,
     usageStore,
     usageTable,
     billableProfile: profile,
