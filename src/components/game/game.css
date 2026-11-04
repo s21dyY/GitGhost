@@ -812,8 +812,26 @@
 .gg-beat-next:hover, .gg-beat-next:focus-visible { color: var(--bone); }
 .gg-beat-next:focus-visible { outline: 2px solid var(--blood-text); outline-offset: 2px; }
 
-.gg-menu { list-style: none; margin: 0; padding: 6px 0 0; display: grid; grid-template-columns: 1fr; gap: 2px; border-top: 1px solid #2a1d1a; }
-@media (min-width: 640px) { .gg-menu { grid-template-columns: 1fr 1fr; column-gap: 12px; } }
+/* The choices are their own small window, as in an RPG, so they never take room from the ghost's words.
+   Wider screens: it floats over the scene, right-aligned, its bottom edge just above the dialogue box (the name tab
+   is 25px tall). Phones: it sits under the box, and the typing row is hidden while it is up. */
+.gg-menu {
+  list-style: none; margin: 0; padding: 6px 4px; display: grid; grid-template-columns: 1fr; gap: 2px; z-index: 6;
+  background: #000; border: 2px solid #b9b2a2; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #000, inset 0 0 0 2px #2a0a0e, 6px 6px 0 0 rgba(0, 0, 0, 0.55);
+}
+.gg-dlg[data-past] .gg-menu { border-color: #8a2a33; }
+@media (min-width: 640px) {
+  .gg-menu { position: absolute; right: 0; bottom: calc(100% - 19px); width: min(560px, 72%); grid-template-columns: 1fr 1fr; column-gap: 8px; }
+}
+@media (max-width: 639px) {
+  .gg-dlg-box { flex: 1 1 auto; min-height: 0; }
+  .gg-menu { flex: none; margin-top: 6px; padding: 2px 4px; gap: 0; }
+  .gg-menu .gg-menu-item { min-height: 40px; padding-top: 2px; padding-bottom: 2px; }
+  /* the scene gives up some height while the choices are up, so the ghost's words keep theirs */
+  .gg .gg-dlg:has(.gg-menu) { max-height: 62dvh; }
+  .gg-dlg:has(.gg-menu):not([data-typing]) .gg-form { display: none; }
+  .gg-dlg[data-typing] .gg-menu { display: none; }
+}
 .gg-menu-item {
   position: relative; width: 100%; min-height: 36px; padding: 4px 8px 4px 24px; text-align: left; cursor: pointer; background: none; border: 0;
   font-family: var(--font-label), monospace; font-size: 13px; line-height: 1.3; letter-spacing: 0.02em; color: var(--bone-dim);
@@ -824,15 +842,8 @@
 .gg-menu-item:focus-visible { box-shadow: inset 2px 0 0 0 var(--blood-text); }
 .gg-menu-item[data-choice="other"] { color: #7d7466; font-style: normal; }
 @media (max-width: 1023px) { .gg-menu-item { min-height: 44px; } }
-/* phones: the box for typing is right below, so "Say something else" is not repeated */
-@media (max-width: 639px) { .gg-menu li:has([data-choice="other"]) { display: none; } .gg-menu-item { font-size: 12px; } }
+@media (max-width: 639px) { .gg-menu-item { font-size: 12px; } }
 @media (prefers-reduced-motion: reduce) { .gg-beat-next, .gg-menu-item::before { animation: none !important; } }
-/* phones: the dialogue is a grid (portrait | conversation, then the input); the menu gets a full-width row between them */
-@media (max-width: 639px) {
-  .gg-dlg-box:has(.gg-menu) { grid-template-rows: minmax(3.5rem, 1fr) auto auto; }
-  .gg-menu { grid-column: 1 / -1; grid-row: 2; }
-  .gg-dlg-box:has(.gg-menu) .gg-form { grid-row: 3; }
-}
 .gg-log[data-opening] { cursor: pointer; }
 
 /* ================= V8.1: a slimmer question row, so the dialogue shows more text ================= */
@@ -857,6 +868,14 @@
   animation: gg-possess-in 0.5s steps(5) both;
 }
 @media (min-width: 1024px) { .gg-possess { left: calc(var(--lw) + 4px); right: calc(var(--rw) + 4px); top: 60px; bottom: calc(var(--dlg-h) + 34px); } }
+/* the choice window floats just above the dialogue: the code panel ends above it (--menu-h is set while it is up) */
+@media (min-width: 640px) and (max-width: 1023px) { .gg-possess { bottom: calc(8px + var(--menu-h, 0px)); } }
+@media (min-width: 1024px) { .gg-possess { bottom: calc(var(--dlg-h) + 34px + max(0px, var(--menu-h, 0px) - 22px)); } }
+/* in the code its choices are short: smaller lines, one per label, keep the window low and the code panel tall */
+@media (min-width: 640px) {
+  .gg:has(.gg-stage[data-possessed]) .gg-menu { width: calc(100% - 210px); padding: 3px 4px; gap: 0; }
+  .gg:has(.gg-stage[data-possessed]) .gg-menu-item { min-height: 30px; font-size: 12px; }
+}
 @keyframes gg-possess-in { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
 .gg-possess-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; border-bottom: 1px solid #2a1d1a; min-width: 0; }
 .gg-possess-title { margin: 0; font-family: var(--font-pixel), monospace; font-size: 12px; color: var(--bone); text-shadow: 2px 2px 0 #3a060d; white-space: nowrap; }
@@ -896,6 +915,11 @@
 @media (prefers-reduced-motion: reduce) { .gg-possess { animation: none; } .gg-stage[data-possessed] .gg-world { transition: none; } }
 /* phones: while its code is open, the dialogue gives the code more of the screen */
 @media (max-width: 1023px) { .gg:has(.gg-stage[data-possessed]) .gg-dlg { max-height: 40dvh; } }
+/* phones in the code: its choices are short, two to a row, and the dialogue keeps room for the reading */
+@media (max-width: 639px) {
+  .gg:has(.gg-stage[data-possessed]) .gg-dlg:has(.gg-menu) { max-height: 50dvh; }
+  .gg:has(.gg-stage[data-possessed]) .gg-menu { grid-template-columns: 1fr 1fr; column-gap: 4px; }
+}
 /* focusing a code line must never scroll the scene itself: clip, unlike hidden, is not a scroll container */
 .gg-stage { overflow: clip; }
 

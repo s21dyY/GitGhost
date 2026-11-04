@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Reply, ReplySegment, SegmentKind } from "./data";
 import { EMOTION_LABEL, type Emotion } from "./fixtures";
 import { useDevMode } from "./dev";
@@ -152,6 +152,18 @@ function ChoiceMenu({ choices, onChoose }: { choices: Choice[]; onChoose: (c: Ch
   useEffect(() => {
     if (focusIsIdle() || document.activeElement?.classList.contains("gg-beat-next")) ref.current?.querySelector("button")?.focus();
   }, []);
+  // Its height, as --menu-h on the game, so the code panel can end above the window instead of under it.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const root = el?.closest<HTMLElement>(".gg");
+    if (!el || !root) return;
+    const ro = new ResizeObserver(() => root.style.setProperty("--menu-h", `${el.offsetHeight}px`));
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--menu-h");
+    };
+  }, []);
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
     const all = Array.from(ref.current?.querySelectorAll("button") ?? []);
@@ -233,9 +245,19 @@ export function Dialogue({
     e.preventDefault();
     onAsk(draft);
   };
+  // Phones show the choices OR the typing row, not both; "Say something else…" switches to typing until the next turn.
+  const [typingAt, setTypingAt] = useState<number | null>(null);
+  const typing = typingAt === items.length;
+  useEffect(() => {
+    if (typing) inputRef.current?.focus();
+  }, [typing, inputRef]);
+  const choose = (c: Choice) => {
+    if (c.id === "other") setTypingAt(items.length);
+    onChoose(c);
+  };
   const lastItem = items.at(-1);
   return (
-    <section className="gg-dlg" aria-labelledby={`${uid}-h`} data-form={form} data-expr={expr} data-past={past || undefined} data-talking={talking || undefined} data-corrupt={corrupt || undefined} data-testid="gg-dialogue">
+    <section className="gg-dlg" aria-labelledby={`${uid}-h`} data-typing={typing || undefined} data-form={form} data-expr={expr} data-past={past || undefined} data-talking={talking || undefined} data-corrupt={corrupt || undefined} data-testid="gg-dialogue">
       <div className="gg-dlg-tab">
         <h2 id={`${uid}-h`} className="gg-nameplate" data-testid="nameplate">{g.ghostName}</h2>
         {dev ? <span className="gg-quiet">{EMOTION_LABEL[expr]}</span> : null}
@@ -302,17 +324,18 @@ export function Dialogue({
               </div>
             ) : null}
           </div>
-          {choices ? <ChoiceMenu choices={choices} onChoose={onChoose} /> : null}
           <form onSubmit={submit} className="gg-form">
             <div className="gg-askrow">
               <label htmlFor={`${uid}-q`} className="sr-only">Your question</label>
-              <input id={`${uid}-q`} ref={inputRef} className="rpg-input" value={draft} maxLength={200} autoComplete="off" placeholder={past ? "Ask about this era, or about a file…" : "Ask in your own words… or about a file, like src/app.js:12"} onChange={(e) => onDraft(e.target.value)} />
+              <input id={`${uid}-q`} ref={inputRef} className="rpg-input" value={draft} maxLength={200} autoComplete="off" placeholder={past ? "Ask about this era, or about a file…" : "Ask in your own words… or about a file, like src/app.js:12"} onChange={(e) => onDraft(e.target.value)} onBlur={() => { if (!draft.trim()) setTypingAt(null); }} />
               <button type="submit" className="rpg-btn rpg-btn-primary" disabled={busy || !draft.trim()}>Ask</button>
             </div>
             {dev ? <p className="gg-hint">{g.mode === "mock" ? "Scripted mock replies from fixtures. No AI model is called." : g.replyMode === "model" ? "Replies are written by an AI model and checked against GitHub sources." : g.replyMode === "unavailable" ? "Replies are unavailable: chat is not configured on this server." : "Replies are scripted from real GitHub evidence. No AI model is called."}</p> : null}
           </form>
         </div>
       </div>
+      {/* the choices get their own window, as in an RPG, so they never take room from what the ghost is saying */}
+      {choices ? <ChoiceMenu choices={choices} onChoose={choose} /> : null}
     </section>
   );
 }
